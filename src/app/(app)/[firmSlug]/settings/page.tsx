@@ -16,6 +16,7 @@ import { assertTenantBySlug } from "@/lib/tenant";
 import {
   getAllowedClientIdsForUser,
   normalizeTenantSettings,
+  withInviteDeliveryStatus,
   withUserClientPermissions
 } from "@/lib/tenant-settings";
 import { getAuthRedirectOrigin } from "@/lib/url";
@@ -125,10 +126,26 @@ async function inviteUser(formData: FormData) {
   const redirectWithError = (message: string) => {
     redirect(`${redirectBase}&inviteError=${encodeURIComponent(message)}`);
   };
+  const markInviteAttempt = async (
+    tenantId: string,
+    userId: string,
+    status: { lastAttemptAt?: string; lastSentAt?: string; lastError?: string | null }
+  ) => {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { settingsJson: true }
+    });
+    const nextSettings = withInviteDeliveryStatus(tenant?.settingsJson, userId, status);
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: { settingsJson: nextSettings }
+    });
+  };
 
   try {
     const user = await getUserContext(firmSlug);
     ensureRole(user, ["firm_admin", "super_admin"]);
+    const tenantId = user.tenantId ?? "";
 
     const email = String(formData.get("email") || "").trim().toLowerCase();
     const name = String(formData.get("name") || "").trim();
@@ -148,25 +165,30 @@ async function inviteUser(formData: FormData) {
       redirectWithError("This email already belongs to another firm");
     }
 
+    let inviteeId = "";
     if (existing) {
-      await prisma.user.update({
+      const updated = await prisma.user.update({
         where: { id: existing.id },
         data: {
           tenantId: user.tenantId ?? "",
           role,
           isActive: true,
           name: name || existing.name
-        }
+        },
+        select: { id: true }
       });
+      inviteeId = updated.id;
     } else {
-      await prisma.user.create({
+      const created = await prisma.user.create({
         data: {
           tenantId: user.tenantId ?? "",
           email,
           name: name || email.split("@")[0],
           role
-        }
+        },
+        select: { id: true }
       });
+      inviteeId = created.id;
     }
 
     const supabaseAdmin = createClient(
@@ -182,8 +204,18 @@ async function inviteUser(formData: FormData) {
     });
 
     if (error) {
+      await markInviteAttempt(tenantId, inviteeId, {
+        lastAttemptAt: new Date().toISOString(),
+        lastError: error.message || "Unable to send invite email"
+      });
       redirectWithError(error.message || "Unable to send invite email");
     }
+
+    await markInviteAttempt(tenantId, inviteeId, {
+      lastAttemptAt: new Date().toISOString(),
+      lastSentAt: new Date().toISOString(),
+      lastError: null
+    });
 
     revalidatePath(`/${firmSlug}/settings`);
     redirect(`${redirectBase}&inviteSuccess=1`);
@@ -192,6 +224,85 @@ async function inviteUser(formData: FormData) {
       throw error;
     }
     const message = error instanceof Error ? error.message : "Unable to send invite email";
+    redirectWithError(message);
+  }
+}
+
+async function resendInvite(formData: FormData) {
+  "use server";
+  const firmSlug = String(formData.get("firmSlug") || "");
+  const inviteeId = String(formData.get("userId") || "");
+  const redirectBase = `/${firmSlug}/settings?section=users`;
+  const redirectWithError = (message: string) => {
+    redirect(`${redirectBase}&inviteError=${encodeURIComponent(message)}`);
+  };
+
+  try {
+    const user = await getUserContext(firmSlug);
+    ensureRole(user, ["firm_admin", "super_admin"]);
+    const tenantId = user.tenantId ?? "";
+
+    if (!inviteeId) {
+      redirectWithError("Invite user is required");
+    }
+
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      redirectWithError("Supabase invite is not configured.");
+    }
+
+    const invitee = await prisma.user.findFirst({
+      where: {
+        id: inviteeId,
+        tenantId,
+        supabaseAuthId: null
+      },
+      select: {
+        id: true,
+        email: true
+      }
+    });
+    if (!invitee) {
+      redirectWithError("Pending invite not found");
+      return;
+    }
+
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const requestHeaders = await headers();
+    const authOrigin = getAuthRedirectOrigin(requestHeaders);
+    const redirectTo = authOrigin ? `${authOrigin}/auth/callback` : undefined;
+    const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(invitee.email, {
+      ...(redirectTo ? { redirectTo } : {})
+    });
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { settingsJson: true }
+    });
+    const nextSettings = withInviteDeliveryStatus(tenant?.settingsJson, invitee.id, {
+      lastAttemptAt: new Date().toISOString(),
+      ...(error
+        ? { lastError: error.message || "Unable to resend invite email" }
+        : { lastSentAt: new Date().toISOString(), lastError: null })
+    });
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: { settingsJson: nextSettings }
+    });
+
+    if (error) {
+      redirectWithError(error.message || "Unable to resend invite email");
+    }
+
+    revalidatePath(`/${firmSlug}/settings`);
+    redirect(`${redirectBase}&inviteSuccess=resent`);
+  } catch (error) {
+    if (isRedirectControlError(error)) {
+      throw error;
+    }
+    const message = error instanceof Error ? error.message : "Unable to resend invite email";
     redirectWithError(message);
   }
 }
@@ -645,9 +756,9 @@ export default async function SettingsPage({
                     {inviteError}
                   </p>
                 ) : null}
-                {inviteSuccess === "1" ? (
+                {inviteSuccess === "1" || inviteSuccess === "resent" ? (
                   <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                    Invite sent successfully.
+                    {inviteSuccess === "resent" ? "Invite resent successfully." : "Invite sent successfully."}
                   </p>
                 ) : null}
                 <form action={inviteUser} className="grid gap-3 md:grid-cols-4">
@@ -670,25 +781,48 @@ export default async function SettingsPage({
                   <p className="text-sm text-[#7a7a70]">No pending invites.</p>
                 ) : (
                   <ul className="space-y-2">
-                    {pendingInvites.map((member) => (
+                    {pendingInvites.map((member) => {
+                      const inviteStatus = tenantSettings.inviteDeliveryByUserId?.[member.id];
+                      const lastSentAt = inviteStatus?.lastSentAt ? new Date(inviteStatus.lastSentAt) : null;
+                      const lastAttemptAt = inviteStatus?.lastAttemptAt ? new Date(inviteStatus.lastAttemptAt) : null;
+                      const inviteErrorText = inviteStatus?.lastError?.trim();
+                      return (
                       <li key={member.id} className="rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] p-3">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
                           <div>
                             <p className="font-medium text-[#1a2e1f]">{member.name}</p>
                             <p className="text-sm text-[#7a7a70]">{member.email}</p>
                             <p className="text-xs text-[#7a7a70]">
                               Invited {member.createdAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                             </p>
+                            {inviteErrorText ? (
+                              <p className="mt-1 text-xs text-red-700">
+                                Last attempt failed {lastAttemptAt ? `(${lastAttemptAt.toLocaleString("en-US")})` : ""}: {inviteErrorText}
+                              </p>
+                            ) : (
+                              <p className="mt-1 text-xs text-emerald-700">
+                                {lastSentAt
+                                  ? `Last sent ${lastSentAt.toLocaleString("en-US")}`
+                                  : "Invite delivery status not yet recorded"}
+                              </p>
+                            )}
                           </div>
                           <div className="text-right">
                             <span className="inline-flex rounded-full bg-[rgba(196,83,26,0.12)] px-2 py-0.5 text-xs font-medium text-[#c4531a]">
                               Pending acceptance
                             </span>
                             <p className="mt-1 text-xs text-[#7a7a70]">{member.role === "firm_admin" ? "Firm Admin" : "Team Member"}</p>
+                            <form action={resendInvite} className="mt-2">
+                              <input name="firmSlug" type="hidden" value={firmSlug} />
+                              <input name="userId" type="hidden" value={member.id} />
+                              <FormSubmitButton className="button-secondary !h-9 px-3 text-xs" pendingText="Resending..." successText="Resent">
+                                Resend invite
+                              </FormSubmitButton>
+                            </form>
                           </div>
                         </div>
                       </li>
-                    ))}
+                    )})}
                   </ul>
                 )}
               </section>
