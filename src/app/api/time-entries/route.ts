@@ -157,23 +157,107 @@ export async function PATCH(request: NextRequest) {
       }
       await assertPeriodUnlocked(user.tenantId ?? "", entry.date);
     }
+    const patch = body.patch as Record<string, unknown>;
+    const patchData: {
+      clientId?: string;
+      workstreamId?: string;
+      isBillable?: boolean;
+      notes?: string | null;
+      date?: Date;
+      startTime?: Date | null;
+      endTime?: Date | null;
+      durationMinutes?: number;
+    } = {};
 
-    const result = await prisma.timeEntry.updateMany({
-      where: {
-        tenantId: user.tenantId ?? "",
-        id: {
-          in: body.entryIds
-        },
-        deletedAt: null
-      },
-      data: {
-        clientId: body.patch.clientId,
-        workstreamId: body.patch.workstreamId,
-        isBillable: body.patch.isBillable
+    if (typeof patch.clientId === "string" && patch.clientId.trim()) {
+      patchData.clientId = patch.clientId;
+    }
+    if (typeof patch.workstreamId === "string" && patch.workstreamId.trim()) {
+      patchData.workstreamId = patch.workstreamId;
+    }
+    if (typeof patch.isBillable === "boolean") {
+      patchData.isBillable = patch.isBillable;
+    }
+    if (patch.notes === null) {
+      patchData.notes = null;
+    } else if (typeof patch.notes === "string") {
+      patchData.notes = patch.notes.trim() || null;
+    }
+    if (typeof patch.date === "string" && patch.date.trim()) {
+      const parsedDate = new Date(patch.date);
+      if (Number.isNaN(parsedDate.getTime())) {
+        return jsonError("Invalid date");
       }
-    });
+      patchData.date = parsedDate;
+      await assertPeriodUnlocked(user.tenantId ?? "", parsedDate);
+    }
+    if (patch.startTime === null) {
+      patchData.startTime = null;
+    } else if (typeof patch.startTime === "string" && patch.startTime.trim()) {
+      const parsed = new Date(patch.startTime);
+      if (Number.isNaN(parsed.getTime())) {
+        return jsonError("Invalid startTime");
+      }
+      patchData.startTime = parsed;
+    }
+    if (patch.endTime === null) {
+      patchData.endTime = null;
+    } else if (typeof patch.endTime === "string" && patch.endTime.trim()) {
+      const parsed = new Date(patch.endTime);
+      if (Number.isNaN(parsed.getTime())) {
+        return jsonError("Invalid endTime");
+      }
+      patchData.endTime = parsed;
+    }
+    if (patch.durationMinutes != null) {
+      const durationMinutes = Number(patch.durationMinutes);
+      if (Number.isNaN(durationMinutes) || durationMinutes <= 0) {
+        return jsonError("Invalid durationMinutes");
+      }
+      patchData.durationMinutes = Math.round(durationMinutes);
+    }
 
-    return NextResponse.json({ updated: result.count });
+    validateTimeRange(patchData.startTime ?? undefined, patchData.endTime ?? undefined);
+
+    if (
+      patchData.durationMinutes == null &&
+      patchData.startTime instanceof Date &&
+      patchData.endTime instanceof Date
+    ) {
+      patchData.durationMinutes = Math.max(
+        1,
+        Math.round((patchData.endTime.getTime() - patchData.startTime.getTime()) / 60000)
+      );
+    }
+
+    for (const entry of entries) {
+      const targetClientId = patchData.clientId ?? entry.clientId;
+      if (patchData.workstreamId) {
+        const workstream = await prisma.workstream.findFirst({
+          where: {
+            id: patchData.workstreamId,
+            tenantId: user.tenantId ?? "",
+            clientId: targetClientId,
+            status: "active"
+          },
+          select: { id: true }
+        });
+        if (!workstream) {
+          return jsonError("Selected workstream is unavailable for this client", 400);
+        }
+      }
+    }
+
+    const updates = await Promise.all(
+      entries.map((entry) =>
+        prisma.timeEntry.update({
+          where: { id: entry.id },
+          data: patchData
+        })
+      )
+    );
+
+    return NextResponse.json({ updated: updates.length });
   } catch (error) {
     return jsonError(error instanceof Error ? error.message : "Failed bulk update", 400);
   }

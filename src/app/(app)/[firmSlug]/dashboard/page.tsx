@@ -5,6 +5,7 @@ import { getUserContext } from "@/lib/auth";
 import { DateRangePickerField } from "@/components/date-range-picker-field";
 import { ExcelFilterField } from "@/components/excel-filter-field";
 import { PeriodFilterField } from "@/components/period-filter-field";
+import { DashboardTimerRows } from "@/components/dashboard-timer-rows";
 
 type DashboardParams = {
   period?: string;
@@ -133,6 +134,7 @@ export default async function DashboardPage({
       },
       select: {
         id: true,
+        clientId: true,
         name: true
       },
       orderBy: {
@@ -380,22 +382,27 @@ export default async function DashboardPage({
                                 <th className="py-2">Notes</th>
                               </tr>
                             </thead>
-                            <tbody>
-                              {(timerRowsByClient.get(row.clientId) ?? [])
+                            <DashboardTimerRows
+                              firmSlug={firmSlug}
+                              isAdmin={isAdmin}
+                              rows={(timerRowsByClient.get(row.clientId) ?? [])
                                 .sort((a, b) => b.date.getTime() - a.date.getTime())
-                                .map((timer) => (
-                                  <tr key={timer.id} className="border-b border-[#ede9e1]">
-                                    <td className="py-2 pr-3">{format(timer.date, "MMM d, yyyy")}</td>
-                                    {isAdmin ? <td className="py-2 pr-3">{timer.user.name}</td> : null}
-                                    <td className="py-2 pr-3">{timer.workstream.name}</td>
-                                    <td className="py-2 pr-3">{timer.startTime ? format(timer.startTime, "h:mm a") : "-"}</td>
-                                    <td className="py-2 pr-3">{timer.endTime ? format(timer.endTime, "h:mm a") : "-"}</td>
-                                    <td className="py-2 pr-3">{(timer.durationMinutes / 60).toFixed(2)}</td>
-                                    <td className="py-2 pr-3">{timer.isBillable ? "Client Work" : "Firm Work"}</td>
-                                    <td className="py-2">{timer.notes || "-"}</td>
-                                  </tr>
-                                ))}
-                            </tbody>
+                                .map((timer) => ({
+                                  id: timer.id,
+                                  dateIso: timer.date.toISOString(),
+                                  startTimeIso: timer.startTime ? timer.startTime.toISOString() : null,
+                                  endTimeIso: timer.endTime ? timer.endTime.toISOString() : null,
+                                  durationMinutes: timer.durationMinutes,
+                                  isBillable: timer.isBillable,
+                                  notes: timer.notes,
+                                  workstreamId: timer.workstreamId,
+                                  workstreamName: timer.workstream.name,
+                                  userName: timer.user.name
+                                }))}
+                              workstreams={workstreams
+                                .filter((workstream) => workstream.clientId === row.clientId)
+                                .map((workstream) => ({ id: workstream.id, name: workstream.name }))}
+                            />
                           </table>
                         </div>
                       </div>
