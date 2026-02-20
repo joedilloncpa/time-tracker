@@ -149,7 +149,7 @@ export function DashboardTimerRows({
           const isEditing = timer.id === editingId && draft;
           if (isEditing) {
             return (
-              <tr key={timer.id} className="border-b border-[#ede9e1] bg-[#f7f4ef]">
+              <tr key={timer.id} className="border-b border-[#ddd9d0] bg-[rgba(28,58,40,0.05)]">
                 <td className="py-2 pr-3">
                   <input
                     className="input !h-9 !w-[170px] !py-1.5"
@@ -231,7 +231,7 @@ export function DashboardTimerRows({
           return (
             <tr
               key={timer.id}
-              className="border-b border-[#ede9e1] cursor-pointer hover:bg-[#f7f4ef]"
+              className="cursor-pointer border-b border-[#ede9e1] hover:bg-[rgba(28,58,40,0.04)]"
               onDoubleClick={() => beginEdit(timer)}
               title="Double-click to edit"
             >
@@ -241,7 +241,17 @@ export function DashboardTimerRows({
               <td className="py-2 pr-3">{formatTimeText(timer.startTimeIso)}</td>
               <td className="py-2 pr-3">{formatTimeText(timer.endTimeIso)}</td>
               <td className="py-2 pr-3">{(timer.durationMinutes / 60).toFixed(2)}</td>
-              <td className="py-2 pr-3">{timer.isBillable ? "Client Work" : "Firm Work"}</td>
+              <td className="py-2 pr-3">
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    timer.isBillable
+                      ? "bg-[rgba(196,83,26,0.12)] text-[#c4531a]"
+                      : "bg-[rgba(28,58,40,0.12)] text-[#1c3a28]"
+                  }`}
+                >
+                  {timer.isBillable ? "Client Work" : "Firm Work"}
+                </span>
+              </td>
               <td className="py-2">{timer.notes || "-"}</td>
             </tr>
           );
@@ -249,7 +259,7 @@ export function DashboardTimerRows({
       </tbody>
       <tfoot>
         <tr>
-          <td className="pt-2 text-xs text-[#7a7a70]" colSpan={isAdmin ? 8 : 7}>
+          <td className="pt-2 text-xs text-[#4a4a42]" colSpan={isAdmin ? 8 : 7}>
             Tip: double-click any timer row to edit inline.
           </td>
         </tr>

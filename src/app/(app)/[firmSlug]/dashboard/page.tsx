@@ -351,7 +351,7 @@ export default async function DashboardPage({
                   <td className="p-0" colSpan={topColumnCount}>
                     <details className="group border-b border-[#ede9e1]">
                       <summary
-                        className="list-none grid cursor-pointer items-center gap-0 rounded-md px-[14px] py-3 transition-colors hover:bg-[#ede9e1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#24482f]/25 [&::-webkit-details-marker]:hidden"
+                        className="list-none grid cursor-pointer items-center gap-0 rounded-md px-[14px] py-3 transition-colors hover:bg-[rgba(28,58,40,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#24482f]/25 [&::-webkit-details-marker]:hidden"
                         style={{ gridTemplateColumns: topColumnTemplate }}
                       >
                         <span className="font-medium text-[#1a2e1f]">{row.name}</span>
@@ -366,12 +366,12 @@ export default async function DashboardPage({
                           </>
                         ) : null}
                       </summary>
-                      <div className="mt-1 rounded-md border border-[#e3ded5] bg-[#fbfaf7] p-3">
-                        <div className="mb-2 text-sm font-medium text-[#1a2e1f]">Timers</div>
+                      <div className="mt-1 rounded-md border border-[#ddd9d0] bg-white p-3 shadow-[0_1px_3px_rgba(20,18,12,0.08)]">
+                        <div className="mb-2 text-sm font-semibold text-[#1c3a28]">Timers</div>
                         <div className="overflow-x-auto">
                           <table className="min-w-full text-sm">
                             <thead>
-                              <tr className="border-b border-[#ddd9d0] text-left text-xs uppercase tracking-[0.06em] text-[#7a7a70]">
+                              <tr className="border-b border-[#ddd9d0] bg-[rgba(28,58,40,0.04)] text-left text-xs uppercase tracking-[0.06em] text-[#4a4a42]">
                                 <th className="py-2 pr-3">Date</th>
                                 {isAdmin ? <th className="py-2 pr-3">Employee</th> : null}
                                 <th className="py-2 pr-3">Workstream</th>
