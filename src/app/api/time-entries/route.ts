@@ -13,12 +13,32 @@ export async function GET(request: NextRequest) {
     const from = request.nextUrl.searchParams.get("from");
     const to = request.nextUrl.searchParams.get("to");
     const teamMemberId = request.nextUrl.searchParams.get("teamMemberId");
+    const isAdmin = user.role === "firm_admin" || user.role === "super_admin";
+
+    let scopedTeamMemberId: string | null = null;
+    if (teamMemberId) {
+      if (!isAdmin) {
+        return jsonError("Only admins can filter by team member", 403);
+      }
+      const member = await prisma.user.findFirst({
+        where: {
+          id: teamMemberId,
+          tenantId: user.tenantId ?? ""
+        },
+        select: { id: true }
+      });
+      if (!member) {
+        return jsonError("Selected team member is unavailable", 400);
+      }
+      scopedTeamMemberId = member.id;
+    }
 
     const entries = await prisma.timeEntry.findMany({
       where: {
         tenantId: user.tenantId ?? "",
         deletedAt: null,
-        ...(teamMemberId ? { userId: teamMemberId } : {}),
+        user: { tenantId: user.tenantId ?? "" },
+        ...(scopedTeamMemberId ? { userId: scopedTeamMemberId } : {}),
         ...(from || to
           ? {
               date: {
@@ -111,7 +131,7 @@ export async function POST(request: NextRequest) {
     const entry = await prisma.timeEntry.create({
       data: {
         tenantId,
-        userId: body.userId && (user.role === "firm_admin" || user.role === "super_admin") ? body.userId : user.id,
+        userId: user.id,
         clientId: body.clientId,
         workstreamId: body.workstreamId,
         date,

@@ -82,6 +82,10 @@ function hoursFromMinutes(minutes: number) {
   return minutes / 60;
 }
 
+function normalizePersonName(value: string) {
+  return value.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
 export default async function DashboardPage({
   params,
   searchParams
@@ -113,7 +117,7 @@ export default async function DashboardPage({
     : [];
   const selectedWorkstreamIds = (query.workstreamIds ?? "").split(",").map((id) => id.trim()).filter(Boolean);
 
-  const [clients, workstreams, entryUsers] = await Promise.all([
+  const [clients, workstreams] = await Promise.all([
     prisma.client.findMany({
       where: {
         tenantId: user.tenantId ?? "",
@@ -140,25 +144,43 @@ export default async function DashboardPage({
       orderBy: {
         name: "asc"
       }
-    }),
-    prisma.timeEntry.findMany({
-      where: {
-        tenantId: user.tenantId ?? "",
-        deletedAt: null
-      },
-      select: {
-        userId: true
-      },
-      distinct: ["userId"]
     })
   ]);
+  const visibleClientIds = new Set(clients.map((client) => client.id));
+  const appliedClientIds = selectedClientIds.length
+    ? selectedClientIds.filter((clientId) => visibleClientIds.has(clientId))
+    : clients.map((client) => client.id);
+  const timeEntryWhereBase = {
+    tenantId: user.tenantId ?? "",
+    deletedAt: null,
+    ...(dateRange
+      ? {
+          date: {
+            gte: dateRange.from,
+            lte: dateRange.to
+          }
+        }
+      : {}),
+    ...(selectedWorkstreamIds.length ? { workstreamId: { in: selectedWorkstreamIds } } : {}),
+    ...(showBillable && showNonBillable
+      ? {}
+      : showBillable
+        ? { isBillable: true }
+        : { isBillable: false }),
+    ...(appliedClientIds.length ? { clientId: { in: appliedClientIds } } : { clientId: "" })
+  };
+  const entryUsers = await prisma.timeEntry.findMany({
+    where: timeEntryWhereBase,
+    select: {
+      userId: true
+    },
+    distinct: ["userId"]
+  });
   const entryUserIds = entryUsers.map((row) => row.userId).filter(Boolean);
   const employees = await prisma.user.findMany({
     where: {
-      OR: [
-        { tenantId: user.tenantId ?? "" },
-        ...(entryUserIds.length ? [{ id: { in: entryUserIds } }] : [])
-      ]
+      tenantId: user.tenantId ?? "",
+      ...(entryUserIds.length ? { id: { in: entryUserIds } } : { id: "" })
     },
     select: {
       id: true,
@@ -168,36 +190,53 @@ export default async function DashboardPage({
       name: "asc"
     }
   });
-
-  const visibleClientIds = new Set(clients.map((client) => client.id));
-  const appliedClientIds = selectedClientIds.length
-    ? selectedClientIds.filter((clientId) => visibleClientIds.has(clientId))
-    : clients.map((client) => client.id);
+  const groupedEmployees = new Map<string, { label: string; memberIds: string[] }>();
+  for (const employee of employees) {
+    const key = normalizePersonName(employee.name);
+    const existing = groupedEmployees.get(key);
+    if (existing) {
+      existing.memberIds.push(employee.id);
+      continue;
+    }
+    groupedEmployees.set(key, {
+      label: employee.name.replace(/\s+/g, " ").trim(),
+      memberIds: [employee.id]
+    });
+  }
+  const employeeFilterOptions = [...groupedEmployees.values()]
+    .map((group) => ({
+      value: group.memberIds[0],
+      label: group.label,
+      memberIds: group.memberIds
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+  const employeeGroupByValue = new Map(employeeFilterOptions.map((option) => [option.value, option.memberIds]));
+  const employeeValueByMemberId = new Map<string, string>();
+  for (const option of employeeFilterOptions) {
+    for (const memberId of option.memberIds) {
+      employeeValueByMemberId.set(memberId, option.value);
+    }
+  }
+  const selectedEmployeeValues = [...new Set(
+    selectedEmployeeIds
+      .map((id) => employeeValueByMemberId.get(id) ?? id)
+      .filter(Boolean)
+  )];
   const visibleEmployeeIds = new Set(employees.map((employee) => employee.id));
-  const appliedEmployeeIds = selectedEmployeeIds.length
-    ? selectedEmployeeIds.filter((employeeId) => visibleEmployeeIds.has(employeeId))
+  const visibleEmployeeValues = new Set(employeeFilterOptions.map((option) => option.value));
+  const appliedEmployeeValues = selectedEmployeeValues.length
+    ? selectedEmployeeValues.filter((employeeValue) => visibleEmployeeValues.has(employeeValue))
+    : [];
+  const appliedEmployeeIds = appliedEmployeeValues.length
+    ? [...new Set(
+        appliedEmployeeValues.flatMap((employeeValue) => employeeGroupByValue.get(employeeValue) ?? [employeeValue])
+      )].filter((employeeId) => visibleEmployeeIds.has(employeeId))
     : [];
 
   const entries = showBillable || showNonBillable
     ? await prisma.timeEntry.findMany({
         where: {
-          tenantId: user.tenantId ?? "",
-          deletedAt: null,
-          ...(dateRange
-            ? {
-                date: {
-                  gte: dateRange.from,
-                  lte: dateRange.to
-                }
-              }
-            : {}),
-          ...(selectedWorkstreamIds.length ? { workstreamId: { in: selectedWorkstreamIds } } : {}),
-          ...(showBillable && showNonBillable
-            ? {}
-            : showBillable
-              ? { isBillable: true }
-              : { isBillable: false }),
-          ...(appliedClientIds.length ? { clientId: { in: appliedClientIds } } : { clientId: "" }),
+          ...timeEntryWhereBase,
           ...(isAdmin
             ? (appliedEmployeeIds.length ? { userId: { in: appliedEmployeeIds } } : {})
             : { userId: user.id }),
@@ -287,9 +326,9 @@ export default async function DashboardPage({
           {isAdmin ? (
             <ExcelFilterField
               name="employeeIds"
-              options={employees.map((employee) => ({ value: employee.id, label: employee.name }))}
+              options={employeeFilterOptions.map((option) => ({ value: option.value, label: option.label }))}
               placeholder="Filter employees"
-              selected={selectedEmployeeIds}
+              selected={selectedEmployeeValues}
             />
           ) : null}
           <PeriodFilterField name="period" value={period} />
