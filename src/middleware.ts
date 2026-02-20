@@ -3,6 +3,8 @@ import { getCanonicalOrigin } from "@/lib/url";
 
 function shouldSkip(pathname: string) {
   return (
+    pathname === "/login" ||
+    pathname.startsWith("/auth/") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
     pathname.startsWith("/robots.txt") ||

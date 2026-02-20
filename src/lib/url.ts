@@ -5,6 +5,7 @@ function trimTrailingSlash(value: string) {
 export function getCanonicalOrigin() {
   const configured =
     process.env.APP_CANONICAL_ORIGIN ||
+    process.env.NEXT_PUBLIC_APP_URL ||
     (process.env.VERCEL_PROJECT_PRODUCTION_URL
       ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
       : "");
