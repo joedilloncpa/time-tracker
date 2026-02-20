@@ -147,7 +147,7 @@ export default async function WorkstreamsPage({
     orderBy: { name: "asc" }
   });
 
-  const workstreams = await prisma.workstream.findMany({
+  const defaultWorkstreams = await prisma.workstream.findMany({
     where: {
       tenantId,
       client: {
@@ -165,6 +165,27 @@ export default async function WorkstreamsPage({
     },
     orderBy: [{ name: "asc" }, { client: { name: "asc" } }]
   });
+  const fallbackWorkstreams =
+    !includeArchived && defaultWorkstreams.length === 0
+      ? await prisma.workstream.findMany({
+          where: {
+            tenantId,
+            client: {
+              code: {
+                not: INTERNAL_FIRM_CLIENT_CODE
+              }
+            },
+            ...(selectedClientIds.length ? { clientId: { in: selectedClientIds } } : {})
+          },
+          include: {
+            client: {
+              select: { id: true, name: true }
+            }
+          },
+          orderBy: [{ name: "asc" }, { client: { name: "asc" } }]
+        })
+      : [];
+  const workstreams = fallbackWorkstreams.length > 0 ? fallbackWorkstreams : defaultWorkstreams;
 
   return (
     <main className="space-y-6">
@@ -178,6 +199,11 @@ export default async function WorkstreamsPage({
       </section>
 
       <section className="card ml-2 w-full max-w-6xl space-y-3 md:ml-4">
+        {!includeArchived && fallbackWorkstreams.length > 0 ? (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            No active/paused/complete workstreams were found, so archived workstreams are shown.
+          </p>
+        ) : null}
         <form className="flex flex-wrap items-center gap-3" method="GET">
           <ExcelFilterField
             name="clientIds"

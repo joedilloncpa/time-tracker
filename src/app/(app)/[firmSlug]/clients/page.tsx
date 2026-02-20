@@ -184,7 +184,7 @@ export default async function ClientsPage({
   const openAddWorkstream = addWorkstream === "1";
   const showInactiveClients = includeInactive === "1";
 
-  const clients = await prisma.client.findMany({
+  const defaultClients = await prisma.client.findMany({
     where: {
       tenantId,
       NOT: { code: INTERNAL_FIRM_CLIENT_CODE },
@@ -197,6 +197,22 @@ export default async function ClientsPage({
     },
     orderBy: { name: "asc" }
   });
+  const fallbackClients =
+    !showInactiveClients && defaultClients.length === 0
+      ? await prisma.client.findMany({
+          where: {
+            tenantId,
+            NOT: { code: INTERNAL_FIRM_CLIENT_CODE }
+          },
+          include: {
+            workstreams: {
+              orderBy: { name: "asc" }
+            }
+          },
+          orderBy: { name: "asc" }
+        })
+      : [];
+  const clients = fallbackClients.length > 0 ? fallbackClients : defaultClients;
   const billableClients = clients.filter((client) => client.code !== INTERNAL_FIRM_CLIENT_CODE);
 
   return (
@@ -213,6 +229,11 @@ export default async function ClientsPage({
 
       <section className="card ml-2 w-full max-w-5xl md:ml-4">
         <h2 className="text-lg font-semibold">Client List</h2>
+        {!showInactiveClients && fallbackClients.length > 0 ? (
+          <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            No active clients were found, so all clients are shown.
+          </p>
+        ) : null}
         <form className="mt-3" method="GET">
           <label className="inline-flex items-center gap-2 text-sm text-[#1a2e1f]">
             <input
