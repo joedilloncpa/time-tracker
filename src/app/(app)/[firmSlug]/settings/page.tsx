@@ -452,7 +452,7 @@ export default async function SettingsPage({
   const [tenant, users, clients, workstreams, lockedPeriods] = await Promise.all([
     prisma.tenant.findUnique({
       where: { id: user.tenantId ?? "" },
-      select: { settingsJson: true }
+      select: { name: true, settingsJson: true }
     }),
     isAdmin
       ? prisma.user.findMany({
@@ -555,6 +555,8 @@ export default async function SettingsPage({
                 <input name="firmSlug" type="hidden" value={firmSlug} />
                 <label className="text-sm text-[#4a4a42]">Email</label>
                 <input className="input" disabled value={user.email} />
+                <label className="text-sm text-[#4a4a42]">Firm</label>
+                <input className="input" disabled value={tenant?.name ?? "Not assigned"} />
                 <label className="text-sm text-[#4a4a42]">Name</label>
                 <input className="input" defaultValue={user.name} name="name" required />
                 <button className="button w-fit px-5" type="submit">Save profile</button>
