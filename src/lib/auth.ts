@@ -4,6 +4,27 @@ import { UserRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { UserContext } from "@/lib/types";
 
+export type AuthErrorCode = "unauthorized" | "not_provisioned" | "config";
+
+export class AuthError extends Error {
+  code: AuthErrorCode;
+
+  constructor(code: AuthErrorCode, message: string) {
+    super(message);
+    this.code = code;
+  }
+}
+
+export function isAuthError(error: unknown, codes?: AuthErrorCode[]) {
+  if (!(error instanceof AuthError)) {
+    return false;
+  }
+  if (!codes || !codes.length) {
+    return true;
+  }
+  return codes.includes(error.code);
+}
+
 function parseRole(value: string | undefined): UserRole {
   if (value === "super_admin" || value === "firm_admin" || value === "firm_user") {
     return value;
@@ -67,7 +88,7 @@ export async function getUserContext(firmSlug?: string): Promise<UserContext> {
   }
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    throw new Error("Supabase auth environment variables are missing");
+    throw new AuthError("config", "Supabase auth environment variables are missing");
   }
 
   const cookieStore = await cookies();
@@ -93,7 +114,7 @@ export async function getUserContext(firmSlug?: string): Promise<UserContext> {
   } = await supabase.auth.getUser();
 
   if (!supabaseUser) {
-    throw new Error("Unauthorized");
+    throw new AuthError("unauthorized", "Unauthorized");
   }
 
   const dbUser = await prisma.user.findFirst({
@@ -109,7 +130,14 @@ export async function getUserContext(firmSlug?: string): Promise<UserContext> {
   });
 
   if (!dbUser) {
-    throw new Error("User not provisioned");
+    throw new AuthError("not_provisioned", "User not provisioned");
+  }
+
+  if (!dbUser.supabaseAuthId || dbUser.supabaseAuthId !== supabaseUser.id) {
+    await prisma.user.update({
+      where: { id: dbUser.id },
+      data: { supabaseAuthId: supabaseUser.id }
+    });
   }
 
   return {

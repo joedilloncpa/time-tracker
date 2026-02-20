@@ -1,10 +1,11 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { FirmShell } from "@/components/firm-shell";
-import { getUserContext } from "@/lib/auth";
+import { getUserContext, isAuthError } from "@/lib/auth";
 import { assertTenantBySlug } from "@/lib/tenant";
 import { prisma } from "@/lib/db";
 import { ensureFirmWorkArea, INTERNAL_FIRM_CLIENT_CODE } from "@/lib/firm-work";
 import { getAllowedClientIdsForUser } from "@/lib/tenant-settings";
+import { UserContext } from "@/lib/types";
 
 export default async function FirmLayout({
   children,
@@ -20,7 +21,19 @@ export default async function FirmLayout({
     notFound();
   }
 
-  const user = await getUserContext(firmSlug);
+  let user: UserContext;
+  try {
+    user = await getUserContext(firmSlug);
+  } catch (error) {
+    if (isAuthError(error, ["unauthorized"])) {
+      redirect(`/login?next=/${firmSlug}/dashboard`);
+    }
+    if (isAuthError(error, ["not_provisioned"])) {
+      redirect(`/login?error=not_provisioned&next=/${firmSlug}/dashboard`);
+    }
+    throw error;
+  }
+
   if (user.tenantId && user.tenantId !== tenant.id && user.role !== "super_admin") {
     notFound();
   }

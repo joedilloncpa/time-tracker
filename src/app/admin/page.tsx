@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { UserRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { getUserContext } from "@/lib/auth";
+import { getUserContext, isAuthError } from "@/lib/auth";
 import { ensureRole } from "@/lib/permissions";
 import { ensureFirmWorkArea } from "@/lib/firm-work";
+import { UserContext } from "@/lib/types";
 
 function toSlug(input: string) {
   return input
@@ -131,7 +133,18 @@ async function updateFirmSubscription(formData: FormData) {
 }
 
 export default async function SuperAdminPage() {
-  const user = await getUserContext();
+  let user: UserContext;
+  try {
+    user = await getUserContext();
+  } catch (error) {
+    if (isAuthError(error, ["unauthorized"])) {
+      redirect("/login?next=/admin");
+    }
+    if (isAuthError(error, ["not_provisioned"])) {
+      redirect("/login?error=not_provisioned&next=/admin");
+    }
+    throw error;
+  }
   ensureRole(user, ["super_admin"]);
 
   const [firmCount, userCount, activeSubs, firms, firmUsers] = await Promise.all([

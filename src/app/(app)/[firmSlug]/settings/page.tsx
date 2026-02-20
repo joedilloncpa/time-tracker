@@ -544,6 +544,7 @@ export default async function SettingsPage({
                 <input className="input" minLength={8} name="password" placeholder="New password" required type="password" />
                 <input className="input" minLength={8} name="confirmPassword" placeholder="Confirm new password" required type="password" />
                 <button className="button w-fit px-5" type="submit">Change password</button>
+                <Link className="button-secondary w-fit px-5" href="/auth/logout">Sign out</Link>
                 {process.env.AUTH_MODE === "dev" ? (
                   <p className="text-xs text-[#7a7a70]">Dev auth mode is enabled; password updates are skipped locally.</p>
                 ) : null}
