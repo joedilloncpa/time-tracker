@@ -6,11 +6,20 @@ import { getUserContext } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { ExcelFilterField } from "@/components/excel-filter-field";
 import { INTERNAL_FIRM_CLIENT_CODE } from "@/lib/firm-work";
+import { assertTenantBySlug } from "@/lib/tenant";
+
+async function resolveTenantContext(firmSlug: string) {
+  const [user, tenant] = await Promise.all([
+    getUserContext(firmSlug),
+    assertTenantBySlug(firmSlug)
+  ]);
+  return { user, tenantId: tenant.id };
+}
 
 async function createClient(formData: FormData) {
   "use server";
   const firmSlug = String(formData.get("firmSlug") || "");
-  const user = await getUserContext(firmSlug);
+  const { tenantId } = await resolveTenantContext(firmSlug);
 
   const name = String(formData.get("name") || "").trim();
   if (!name) {
@@ -19,7 +28,7 @@ async function createClient(formData: FormData) {
 
   await prisma.client.create({
     data: {
-      tenantId: user.tenantId ?? "",
+      tenantId,
       name,
       code: String(formData.get("code") || "").trim() || null,
       contactName: String(formData.get("contactName") || "").trim() || null,
@@ -41,7 +50,7 @@ async function createClient(formData: FormData) {
 async function updateClient(formData: FormData) {
   "use server";
   const firmSlug = String(formData.get("firmSlug") || "");
-  const user = await getUserContext(firmSlug);
+  const { tenantId } = await resolveTenantContext(firmSlug);
   const clientId = String(formData.get("clientId") || "");
   const name = String(formData.get("name") || "").trim();
 
@@ -52,7 +61,7 @@ async function updateClient(formData: FormData) {
   await prisma.client.updateMany({
     where: {
       id: clientId,
-      tenantId: user.tenantId ?? ""
+      tenantId
     },
     data: {
       name,
@@ -79,7 +88,7 @@ async function updateClient(formData: FormData) {
 async function createWorkstream(formData: FormData) {
   "use server";
   const firmSlug = String(formData.get("firmSlug") || "");
-  const user = await getUserContext(firmSlug);
+  const { tenantId } = await resolveTenantContext(firmSlug);
   const name = String(formData.get("name") || "").trim();
 
   if (!name) {
@@ -97,7 +106,7 @@ async function createWorkstream(formData: FormData) {
   if (allClientsSelected) {
     const allClients = await prisma.client.findMany({
       where: {
-        tenantId: user.tenantId ?? "",
+        tenantId,
         NOT: { code: INTERNAL_FIRM_CLIENT_CODE }
       },
       select: { id: true }
@@ -111,7 +120,7 @@ async function createWorkstream(formData: FormData) {
 
   await prisma.workstream.createMany({
     data: targetClientIds.map((clientId) => ({
-      tenantId: user.tenantId ?? "",
+      tenantId,
       clientId,
       name
     }))
@@ -124,7 +133,7 @@ async function createWorkstream(formData: FormData) {
 async function updateWorkstreamStatus(formData: FormData) {
   "use server";
   const firmSlug = String(formData.get("firmSlug") || "");
-  const user = await getUserContext(firmSlug);
+  const { tenantId } = await resolveTenantContext(firmSlug);
   const workstreamId = String(formData.get("workstreamId") || "");
 
   if (!workstreamId) {
@@ -139,7 +148,7 @@ async function updateWorkstreamStatus(formData: FormData) {
   await prisma.workstream.updateMany({
     where: {
       id: workstreamId,
-      tenantId: user.tenantId ?? ""
+      tenantId
     },
     data: {
       status: nextStatus
@@ -158,14 +167,14 @@ export default async function ClientsPage({
 }) {
   const { firmSlug } = await params;
   const { addClient, addWorkstream, includeInactive } = await searchParams;
-  const user = await getUserContext(firmSlug);
+  const { user, tenantId } = await resolveTenantContext(firmSlug);
   const openAddClient = addClient === "1";
   const openAddWorkstream = addWorkstream === "1";
   const showInactiveClients = includeInactive === "1";
 
   const clients = await prisma.client.findMany({
     where: {
-      tenantId: user.tenantId ?? "",
+      tenantId,
       ...(showInactiveClients ? {} : { status: "active" })
     },
     include: {
