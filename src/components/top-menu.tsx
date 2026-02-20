@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { UserContext } from "@/lib/types";
 import { INTERNAL_FIRM_CLIENT_CODE } from "@/lib/firm-work";
+import { UserMenu } from "@/components/user-menu";
 
 type TimerClientOption = {
   id: string;
@@ -39,14 +40,6 @@ const navItems = [
   { href: "dashboard", label: "Dashboard" },
   { href: "clients", label: "Clients" }
 ];
-
-function initials(name: string) {
-  return name
-    .split(" ")
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
 
 export function TopMenu({
   firmSlug,
@@ -265,9 +258,11 @@ export function TopMenu({
             >
               <IconCog />
             </Link>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1c3a28] text-sm font-semibold text-white">
-              {initials(user.name)}
-            </div>
+            <UserMenu
+              name={user.name}
+              role={user.role}
+              settingsHref={`/${firmSlug}/settings`}
+            />
           </div>
         </div>
       </header>

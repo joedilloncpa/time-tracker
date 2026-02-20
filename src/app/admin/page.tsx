@@ -7,6 +7,7 @@ import { getUserContext, isAuthError } from "@/lib/auth";
 import { ensureRole } from "@/lib/permissions";
 import { ensureFirmWorkArea } from "@/lib/firm-work";
 import { UserContext } from "@/lib/types";
+import { UserMenu } from "@/components/user-menu";
 
 function toSlug(input: string) {
   return input
@@ -186,7 +187,10 @@ export default async function SuperAdminPage() {
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
-      <h1 className="text-2xl font-semibold text-brand-900">Super Admin Dashboard</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold text-brand-900">Super Admin Dashboard</h1>
+        <UserMenu name={user.name} role={user.role} />
+      </div>
       <section className="grid gap-4 md:grid-cols-3">
         <div className="card"><p className="text-sm text-slate-500">Firms</p><p className="text-3xl font-semibold">{firmCount}</p></div>
         <div className="card"><p className="text-sm text-slate-500">Users</p><p className="text-3xl font-semibold">{userCount}</p></div>
