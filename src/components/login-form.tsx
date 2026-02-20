@@ -75,7 +75,7 @@ export function LoginForm({ nextPath, oauthCode }: { nextPath: string; oauthCode
     setLoading(true);
 
     const callbackNext = encodeURIComponent(safeNextPath);
-    const redirectTo = `${window.location.origin}/auth/callback?next=${callbackNext}`;
+    const redirectTo = `${window.location.origin}/auth/complete?next=${callbackNext}`;
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
