@@ -184,11 +184,23 @@ export default async function SuperAdminPage() {
       ]
     })
   ]);
+  const preferredFirm =
+    firms.find((firm) => firm.slug === "chainbridge") ??
+    firms.find((firm) => firm.id === user.tenantId) ??
+    firms[0] ??
+    null;
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-brand-900">Super Admin Dashboard</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-semibold text-brand-900">Super Admin Dashboard</h1>
+          {preferredFirm ? (
+            <Link className="button" href={`/${preferredFirm.slug}/dashboard`}>
+              Switch to {preferredFirm.name}
+            </Link>
+          ) : null}
+        </div>
         <UserMenu name={user.name} role={user.role} />
       </div>
       <section className="grid gap-4 md:grid-cols-3">
