@@ -149,7 +149,7 @@ export function DashboardTimerRows({
           const isEditing = timer.id === editingId && draft;
           if (isEditing) {
             return (
-              <tr key={timer.id} className="border-b border-[#ddd9d0] bg-[rgba(28,58,40,0.05)]">
+              <tr key={timer.id} className="border-b border-[#d6e6dc] [&>td]:bg-[#e6f1ea]">
                 <td className="py-2 pr-3">
                   <input
                     className="input !h-9 !w-[170px] !py-1.5"
@@ -231,7 +231,7 @@ export function DashboardTimerRows({
           return (
             <tr
               key={timer.id}
-              className="cursor-pointer border-b border-[#ede9e1] [&>td]:transition-colors [&>td]:duration-100 [&:hover>td]:!bg-[#e8ddff]"
+              className="cursor-pointer border-b border-[#ede9e1] [&>td]:transition-colors [&>td]:duration-100 [&:hover>td]:!bg-[#e6f1ea]"
               onDoubleClick={() => beginEdit(timer)}
               title="Double-click to edit"
             >

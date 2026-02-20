@@ -113,7 +113,7 @@ export default async function DashboardPage({
     : [];
   const selectedWorkstreamIds = (query.workstreamIds ?? "").split(",").map((id) => id.trim()).filter(Boolean);
 
-  const [clients, workstreams, employees] = await Promise.all([
+  const [clients, workstreams, entryUsers] = await Promise.all([
     prisma.client.findMany({
       where: {
         tenantId: user.tenantId ?? "",
@@ -141,19 +141,33 @@ export default async function DashboardPage({
         name: "asc"
       }
     }),
-    prisma.user.findMany({
+    prisma.timeEntry.findMany({
       where: {
-        tenantId: user.tenantId ?? ""
+        tenantId: user.tenantId ?? "",
+        deletedAt: null
       },
       select: {
-        id: true,
-        name: true
+        userId: true
       },
-      orderBy: {
-        name: "asc"
-      }
+      distinct: ["userId"]
     })
   ]);
+  const entryUserIds = entryUsers.map((row) => row.userId).filter(Boolean);
+  const employees = await prisma.user.findMany({
+    where: {
+      OR: [
+        { tenantId: user.tenantId ?? "" },
+        ...(entryUserIds.length ? [{ id: { in: entryUserIds } }] : [])
+      ]
+    },
+    select: {
+      id: true,
+      name: true
+    },
+    orderBy: {
+      name: "asc"
+    }
+  });
 
   const visibleClientIds = new Set(clients.map((client) => client.id));
   const appliedClientIds = selectedClientIds.length
