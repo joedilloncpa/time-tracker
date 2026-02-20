@@ -2,14 +2,16 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { UserRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { getUserContext } from "@/lib/auth";
+import { getUserContext, isAuthError } from "@/lib/auth";
 import { ensureRole } from "@/lib/permissions";
 import { ExcelFilterField } from "@/components/excel-filter-field";
 import { ensureFirmWorkArea, INTERNAL_FIRM_CLIENT_CODE } from "@/lib/firm-work";
+import { assertTenantBySlug } from "@/lib/tenant";
 import {
   getAllowedClientIdsForUser,
   normalizeTenantSettings,
@@ -448,7 +450,21 @@ export default async function SettingsPage({
 }) {
   const { firmSlug } = await params;
   const { section } = await searchParams;
-  const user = await getUserContext(firmSlug);
+  await assertTenantBySlug(firmSlug).catch(() => null);
+
+  let user: Awaited<ReturnType<typeof getUserContext>>;
+  try {
+    user = await getUserContext(firmSlug);
+  } catch (error) {
+    if (isAuthError(error, ["unauthorized"])) {
+      redirect(`/login?next=/${firmSlug}/settings`);
+    }
+    if (isAuthError(error, ["not_provisioned"])) {
+      redirect(`/login?error=not_provisioned&next=/${firmSlug}/settings`);
+    }
+    throw error;
+  }
+
   const isAdmin = user.role === "firm_admin" || user.role === "super_admin";
 
   const [tenant, users, clients, workstreams, lockedPeriods] = await Promise.all([
