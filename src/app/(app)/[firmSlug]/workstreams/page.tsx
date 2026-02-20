@@ -15,21 +15,40 @@ type WorkstreamsParams = {
   clientIds?: string;
 };
 
+function toUiStatus(status: WorkstreamStatus) {
+  return status === "active" ? "active" : "inactive";
+}
+
+function fromUiStatus(status: string): WorkstreamStatus | null {
+  if (status === "active") {
+    return "active";
+  }
+  if (status === "inactive") {
+    return "archived";
+  }
+  return null;
+}
+
+function toUiBillingType(type: BillingType) {
+  return type === "fixed" ? "monthly_fixed" : "hourly";
+}
+
+function fromUiBillingType(type: string): BillingType | null {
+  if (type === "hourly") {
+    return "hourly";
+  }
+  if (type === "monthly_fixed") {
+    return "fixed";
+  }
+  return null;
+}
+
 function parseDecimal(value: FormDataEntryValue | null) {
   if (value == null || String(value).trim() === "") {
     return null;
   }
   const parsed = Number(value);
   return Number.isNaN(parsed) ? null : parsed;
-}
-
-function parseDate(value: FormDataEntryValue | null) {
-  const text = String(value ?? "").trim();
-  if (!text) {
-    return null;
-  }
-  const parsed = new Date(`${text}T00:00:00`);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 function uniqueValues<T>(values: T[]) {
@@ -51,8 +70,8 @@ async function createWorkstreams(formData: FormData) {
   ensureRole(user, ["firm_admin", "super_admin"]);
 
   const name = String(formData.get("name") || "").trim();
-  const billingType = String(formData.get("billingType") || "hourly") as BillingType;
-  const status = String(formData.get("status") || "active") as WorkstreamStatus;
+  const billingType = fromUiBillingType(String(formData.get("billingType") || "hourly")) ?? "hourly";
+  const status = fromUiStatus(String(formData.get("status") || "active")) ?? "active";
   const applyToAllClients = formData.get("allClients") === "1";
   const selectedClientIds = String(formData.get("clientIds") || "")
     .split(",")
@@ -105,104 +124,37 @@ async function updateWorkstreamGroup(formData: FormData) {
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
-  const name = String(formData.get("name") || "").trim();
   const billingTypeRaw = String(formData.get("billingType") || "").trim();
   const statusRaw = String(formData.get("status") || "").trim();
-  const clearRate = formData.get("clearRate") === "1";
   const rateRaw = String(formData.get("billingRate") || "").trim();
-  const serviceTypeRaw = String(formData.get("serviceType") || "").trim();
-  const clearServiceType = formData.get("clearServiceType") === "1";
-  const descriptionRaw = String(formData.get("description") || "").trim();
-  const clearDescription = formData.get("clearDescription") === "1";
-  const fixedFeeAmountRaw = String(formData.get("fixedFeeAmount") || "").trim();
-  const clearFixedFeeAmount = formData.get("clearFixedFeeAmount") === "1";
-  const retainerAmountRaw = String(formData.get("retainerAmount") || "").trim();
-  const clearRetainerAmount = formData.get("clearRetainerAmount") === "1";
-  const retainerFrequencyRaw = String(formData.get("retainerFrequency") || "").trim();
-  const clearRetainerFrequency = formData.get("clearRetainerFrequency") === "1";
-  const estimatedHoursRaw = String(formData.get("estimatedHours") || "").trim();
-  const clearEstimatedHours = formData.get("clearEstimatedHours") === "1";
-  const startDateRaw = String(formData.get("startDate") || "").trim();
-  const clearStartDate = formData.get("clearStartDate") === "1";
-  const endDateRaw = String(formData.get("endDate") || "").trim();
-  const clearEndDate = formData.get("clearEndDate") === "1";
   const includeArchived = String(formData.get("includeArchived") || "") === "1";
   const selectedClientIds = String(formData.get("selectedClientIds") || "");
 
-  if (!workstreamIds.length || !name) {
-    throw new Error("Workstream ids and name are required");
+  if (!workstreamIds.length) {
+    throw new Error("Workstream ids are required");
   }
 
   const data: {
-    name: string;
     billingType?: BillingType;
     status?: WorkstreamStatus;
     billingRate?: number | null;
-    serviceType?: string | null;
-    description?: string | null;
-    fixedFeeAmount?: number | null;
-    retainerAmount?: number | null;
-    retainerFrequency?: string | null;
-    estimatedHours?: number | null;
-    startDate?: Date | null;
-    endDate?: Date | null;
-  } = { name };
+  } = {};
 
-  if (billingTypeRaw === "hourly" || billingTypeRaw === "fixed" || billingTypeRaw === "retainer") {
-    data.billingType = billingTypeRaw;
+  const billingType = fromUiBillingType(billingTypeRaw);
+  if (billingType) {
+    data.billingType = billingType;
   }
-  if (statusRaw === "active" || statusRaw === "paused" || statusRaw === "complete" || statusRaw === "archived") {
-    data.status = statusRaw;
+  const status = fromUiStatus(statusRaw);
+  if (status) {
+    data.status = status;
   }
 
-  if (clearRate) {
-    data.billingRate = null;
-  } else if (rateRaw !== "") {
+  if (rateRaw !== "") {
     const parsedRate = parseDecimal(rateRaw);
     if (parsedRate === null) {
       throw new Error("Billing rate must be a valid number");
     }
     data.billingRate = parsedRate;
-  }
-  if (clearServiceType) {
-    data.serviceType = null;
-  } else if (serviceTypeRaw !== "") {
-    data.serviceType = serviceTypeRaw;
-  }
-  if (clearDescription) {
-    data.description = null;
-  } else if (descriptionRaw !== "") {
-    data.description = descriptionRaw;
-  }
-  if (clearFixedFeeAmount) {
-    data.fixedFeeAmount = null;
-  } else if (fixedFeeAmountRaw !== "") {
-    data.fixedFeeAmount = parseDecimal(fixedFeeAmountRaw);
-  }
-  if (clearRetainerAmount) {
-    data.retainerAmount = null;
-  } else if (retainerAmountRaw !== "") {
-    data.retainerAmount = parseDecimal(retainerAmountRaw);
-  }
-  if (clearRetainerFrequency) {
-    data.retainerFrequency = null;
-  } else if (retainerFrequencyRaw !== "") {
-    data.retainerFrequency = retainerFrequencyRaw;
-  }
-  if (clearEstimatedHours) {
-    data.estimatedHours = null;
-  } else if (estimatedHoursRaw !== "") {
-    data.estimatedHours = parseDecimal(estimatedHoursRaw);
-  }
-  if (clearStartDate) {
-    data.startDate = null;
-  } else if (startDateRaw !== "") {
-    data.startDate = parseDate(startDateRaw);
-  }
-  if (clearEndDate) {
-    data.endDate = null;
-  } else if (endDateRaw !== "") {
-    data.endDate = parseDate(endDateRaw);
   }
 
   await prisma.workstream.updateMany({
@@ -229,33 +181,21 @@ async function updateSingleWorkstream(formData: FormData) {
   ensureRole(user, ["firm_admin", "super_admin"]);
 
   const workstreamId = String(formData.get("workstreamId") || "");
-  const name = String(formData.get("name") || "").trim();
-  const clientId = String(formData.get("clientId") || "");
-  const billingType = String(formData.get("billingType") || "hourly") as BillingType;
-  const status = String(formData.get("status") || "active") as WorkstreamStatus;
+  const billingType = fromUiBillingType(String(formData.get("billingType") || "hourly")) ?? "hourly";
+  const status = fromUiStatus(String(formData.get("status") || "active")) ?? "active";
   const includeArchived = String(formData.get("includeArchived") || "") === "1";
   const selectedClientIds = String(formData.get("selectedClientIds") || "");
 
-  if (!workstreamId || !name || !clientId) {
-    throw new Error("Workstream, name, and client are required");
+  if (!workstreamId) {
+    throw new Error("Workstream is required");
   }
 
   await prisma.workstream.updateMany({
     where: { id: workstreamId, tenantId },
     data: {
-      name,
-      clientId,
       billingType,
       status,
-      billingRate: parseDecimal(formData.get("billingRate")),
-      serviceType: String(formData.get("serviceType") || "").trim() || null,
-      description: String(formData.get("description") || "").trim() || null,
-      fixedFeeAmount: parseDecimal(formData.get("fixedFeeAmount")),
-      retainerAmount: parseDecimal(formData.get("retainerAmount")),
-      retainerFrequency: String(formData.get("retainerFrequency") || "").trim() || null,
-      estimatedHours: parseDecimal(formData.get("estimatedHours")),
-      startDate: parseDate(formData.get("startDate")),
-      endDate: parseDate(formData.get("endDate"))
+      billingRate: parseDecimal(formData.get("billingRate"))
     }
   });
 
@@ -406,8 +346,8 @@ export default async function WorkstreamsPage({
             </li>
           ) : null}
           {workstreamGroups.map((group) => {
-            const billingTypes = uniqueValues(group.rows.map((row) => row.billingType));
-            const statuses = uniqueValues(group.rows.map((row) => row.status));
+            const billingTypes = uniqueValues(group.rows.map((row) => toUiBillingType(row.billingType)));
+            const statuses = uniqueValues(group.rows.map((row) => toUiStatus(row.status)));
             const rates = uniqueValues(group.rows.map((row) => (row.billingRate == null ? null : Number(row.billingRate))));
             const sharedBillingType = billingTypes.length === 1 ? billingTypes[0] : "";
             const sharedStatus = statuses.length === 1 ? statuses[0] : "";
@@ -425,7 +365,7 @@ export default async function WorkstreamsPage({
                 <div className="flex items-center gap-2 text-xs text-[#7a7a70]">
                   <span>{sharedStatus || "mixed status"}</span>
                   <span>•</span>
-                  <span>{sharedBillingType || "mixed billing type"}</span>
+                  <span>{sharedBillingType === "monthly_fixed" ? "monthly fixed" : sharedBillingType || "mixed billing type"}</span>
                   <span>•</span>
                   <span>
                     {sharedRate === undefined ? "mixed rates" : sharedRate == null ? "No rate" : `$${Number(sharedRate).toFixed(2)}/hr`}
@@ -444,78 +384,30 @@ export default async function WorkstreamsPage({
               </details>
 
               {isAdmin ? (
-                <form action={updateWorkstreamGroup} className="mt-3 grid gap-3 rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] p-3 md:grid-cols-3">
+                <form action={updateWorkstreamGroup} className="mt-3 grid gap-3 rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] p-3 md:grid-cols-4">
                   <input name="firmSlug" type="hidden" value={firmSlug} />
                   <input name="workstreamIds" type="hidden" value={group.rows.map((row) => row.id).join(",")} />
                   <input name="includeArchived" type="hidden" value={includeArchived ? "1" : "0"} />
                   <input name="selectedClientIds" type="hidden" value={selectedClientIds.join(",")} />
-                  <input className="input" defaultValue={group.name} name="name" placeholder="Workstream name" required />
-                  <input
-                    className="input"
-                    defaultValue={sharedRate == null || sharedRate === undefined ? "" : Number(sharedRate).toString()}
-                    name="billingRate"
-                    placeholder={sharedRate === undefined ? "Mixed rates (set new rate)" : "Billing rate"}
-                    step="0.01"
-                    type="number"
-                  />
                   <select className="input" defaultValue={sharedBillingType} name="billingType">
                     <option value="">Keep existing billing types</option>
                     <option value="hourly">hourly</option>
-                    <option value="fixed">fixed</option>
-                    <option value="retainer">retainer</option>
+                    <option value="monthly_fixed">monthly fixed</option>
                   </select>
                   <select className="input" defaultValue={sharedStatus} name="status">
                     <option value="">Keep existing statuses</option>
                     <option value="active">active</option>
-                    <option value="paused">paused</option>
-                    <option value="complete">complete</option>
-                    <option value="archived">archived</option>
+                    <option value="inactive">inactive</option>
                   </select>
-                  <input className="input" name="serviceType" placeholder="Service type (optional)" />
-                  <input className="input md:col-span-2" name="description" placeholder="Description (optional)" />
-                  <input className="input" name="fixedFeeAmount" placeholder="Fixed fee amount" step="0.01" type="number" />
-                  <input className="input" name="retainerAmount" placeholder="Retainer amount" step="0.01" type="number" />
-                  <input className="input" name="retainerFrequency" placeholder="Retainer frequency" />
-                  <input className="input" name="estimatedHours" placeholder="Estimated hours" step="0.01" type="number" />
-                  <input className="input" name="startDate" type="date" />
-                  <input className="input" name="endDate" type="date" />
-                  <label className="inline-flex items-center gap-2 text-sm text-[#4a4a42]">
-                    <input name="clearRate" type="checkbox" value="1" />
-                    Clear rates for all clients
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-sm text-[#4a4a42]">
-                    <input name="clearServiceType" type="checkbox" value="1" />
-                    Clear service type
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-sm text-[#4a4a42]">
-                    <input name="clearDescription" type="checkbox" value="1" />
-                    Clear description
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-sm text-[#4a4a42]">
-                    <input name="clearFixedFeeAmount" type="checkbox" value="1" />
-                    Clear fixed fee
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-sm text-[#4a4a42]">
-                    <input name="clearRetainerAmount" type="checkbox" value="1" />
-                    Clear retainer amount
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-sm text-[#4a4a42]">
-                    <input name="clearRetainerFrequency" type="checkbox" value="1" />
-                    Clear retainer frequency
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-sm text-[#4a4a42]">
-                    <input name="clearEstimatedHours" type="checkbox" value="1" />
-                    Clear estimated hours
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-sm text-[#4a4a42]">
-                    <input name="clearStartDate" type="checkbox" value="1" />
-                    Clear start date
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-sm text-[#4a4a42]">
-                    <input name="clearEndDate" type="checkbox" value="1" />
-                    Clear end date
-                  </label>
-                  <button className="button md:justify-self-end" type="submit">Save all client rows</button>
+                  <input
+                    className="input"
+                    defaultValue={sharedRate == null || sharedRate === undefined ? "" : Number(sharedRate).toString()}
+                    name="billingRate"
+                    placeholder={sharedRate === undefined ? "Mixed rates (set new rate)" : "Rate"}
+                    step="0.01"
+                    type="number"
+                  />
+                  <button className="button md:justify-self-end" type="submit">Apply to all clients</button>
                 </form>
               ) : null}
               {isAdmin ? (
@@ -523,51 +415,34 @@ export default async function WorkstreamsPage({
                   {group.rows
                     .sort((a, b) => a.client.name.localeCompare(b.client.name))
                     .map((row) => (
-                      <details key={row.id}>
-                        <summary className="cursor-pointer text-sm font-medium text-[#1a2e1f]">
-                          Edit {row.client.name}
-                        </summary>
-                        <form action={updateSingleWorkstream} className="mt-2 grid gap-2 rounded-md border border-[#ede9e1] bg-[#f7f4ef] p-3 md:grid-cols-3">
+                        <form
+                          key={row.id}
+                          action={updateSingleWorkstream}
+                          className="grid gap-2 rounded-md border border-[#ede9e1] bg-[#f7f4ef] p-3 md:grid-cols-[minmax(180px,1fr)_1fr_1fr_1fr_auto]"
+                        >
                           <input name="firmSlug" type="hidden" value={firmSlug} />
                           <input name="workstreamId" type="hidden" value={row.id} />
                           <input name="includeArchived" type="hidden" value={includeArchived ? "1" : "0"} />
                           <input name="selectedClientIds" type="hidden" value={selectedClientIds.join(",")} />
-                          <input className="input" defaultValue={row.name} name="name" required />
-                          <select className="input" defaultValue={row.clientId} name="clientId">
-                            {clients.map((client) => (
-                              <option key={`${row.id}-${client.id}`} value={client.id}>{client.name}</option>
-                            ))}
-                          </select>
+                          <div className="self-center text-sm font-medium text-[#1a2e1f]">{row.client.name}</div>
                           <input
                             className="input"
                             defaultValue={row.billingRate == null ? "" : Number(row.billingRate).toString()}
                             name="billingRate"
-                            placeholder="Billing rate"
+                            placeholder="Rate"
                             step="0.01"
                             type="number"
                           />
-                          <select className="input" defaultValue={row.billingType} name="billingType">
+                          <select className="input" defaultValue={toUiBillingType(row.billingType)} name="billingType">
                             <option value="hourly">hourly</option>
-                            <option value="fixed">fixed</option>
-                            <option value="retainer">retainer</option>
+                            <option value="monthly_fixed">monthly fixed</option>
                           </select>
-                          <select className="input" defaultValue={row.status} name="status">
+                          <select className="input" defaultValue={toUiStatus(row.status)} name="status">
                             <option value="active">active</option>
-                            <option value="paused">paused</option>
-                            <option value="complete">complete</option>
-                            <option value="archived">archived</option>
+                            <option value="inactive">inactive</option>
                           </select>
-                          <input className="input" defaultValue={row.serviceType ?? ""} name="serviceType" placeholder="Service type" />
-                          <input className="input md:col-span-3" defaultValue={row.description ?? ""} name="description" placeholder="Description" />
-                          <input className="input" defaultValue={row.fixedFeeAmount == null ? "" : Number(row.fixedFeeAmount).toString()} name="fixedFeeAmount" placeholder="Fixed fee amount" step="0.01" type="number" />
-                          <input className="input" defaultValue={row.retainerAmount == null ? "" : Number(row.retainerAmount).toString()} name="retainerAmount" placeholder="Retainer amount" step="0.01" type="number" />
-                          <input className="input" defaultValue={row.retainerFrequency ?? ""} name="retainerFrequency" placeholder="Retainer frequency" />
-                          <input className="input" defaultValue={row.estimatedHours == null ? "" : Number(row.estimatedHours).toString()} name="estimatedHours" placeholder="Estimated hours" step="0.01" type="number" />
-                          <input className="input" defaultValue={row.startDate ? row.startDate.toISOString().slice(0, 10) : ""} name="startDate" type="date" />
-                          <input className="input" defaultValue={row.endDate ? row.endDate.toISOString().slice(0, 10) : ""} name="endDate" type="date" />
-                          <button className="button md:justify-self-end" type="submit">Save {row.client.name}</button>
+                          <button className="button md:justify-self-end" type="submit">Save</button>
                         </form>
-                      </details>
                     ))}
                 </div>
               ) : null}
@@ -604,17 +479,14 @@ export default async function WorkstreamsPage({
               <label className="text-sm text-[#4a4a42]">Billing Type</label>
               <select className="input" defaultValue="hourly" name="billingType">
                 <option value="hourly">hourly</option>
-                <option value="fixed">fixed</option>
-                <option value="retainer">retainer</option>
+                <option value="monthly_fixed">monthly fixed</option>
               </select>
               <label className="text-sm text-[#4a4a42]">Billing Rate</label>
               <input className="input" name="billingRate" placeholder="Optional rate" step="0.01" type="number" />
               <label className="text-sm text-[#4a4a42]">Status</label>
               <select className="input" defaultValue="active" name="status">
                 <option value="active">active</option>
-                <option value="paused">paused</option>
-                <option value="complete">complete</option>
-                <option value="archived">archived</option>
+                <option value="inactive">inactive</option>
               </select>
               <div className="md:col-span-2 flex justify-end gap-2">
                 <Link className="button-secondary" href={`/${firmSlug}/workstreams`}>Cancel</Link>
