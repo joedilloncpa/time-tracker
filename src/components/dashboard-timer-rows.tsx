@@ -231,7 +231,7 @@ export function DashboardTimerRows({
           return (
             <tr
               key={timer.id}
-              className="cursor-pointer border-b border-[#ede9e1] hover:bg-[rgba(28,58,40,0.04)]"
+              className="cursor-pointer border-b border-[#ede9e1] hover:bg-[#f1ebff]"
               onDoubleClick={() => beginEdit(timer)}
               title="Double-click to edit"
             >
