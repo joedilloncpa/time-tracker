@@ -77,8 +77,21 @@ export default async function FirmLayout({
     }
   });
 
+  const activeTimer = await prisma.timerSession.findUnique({
+    where: { userId: user.id },
+    select: {
+      id: true,
+      startedAt: true
+    }
+  });
+
   return (
-    <FirmShell firmSlug={firmSlug} timerClients={timerClients} user={user}>
+    <FirmShell
+      activeTimer={activeTimer ? { id: activeTimer.id, startedAt: activeTimer.startedAt.toISOString() } : null}
+      firmSlug={firmSlug}
+      timerClients={timerClients}
+      user={user}
+    >
       {children}
     </FirmShell>
   );

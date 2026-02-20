@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { UserContext } from "@/lib/types";
@@ -36,6 +36,14 @@ function IconCog() {
   );
 }
 
+function IconStop() {
+  return (
+    <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="5" y="5" width="14" height="14" rx="3" />
+    </svg>
+  );
+}
+
 const navItems = [
   { href: "dashboard", label: "Dashboard" },
   { href: "clients", label: "Clients" },
@@ -43,10 +51,15 @@ const navItems = [
 ];
 
 export function TopMenu({
+  activeTimer,
   firmSlug,
   user,
   timerClients
 }: {
+  activeTimer: {
+    id: string;
+    startedAt: string;
+  } | null;
   firmSlug: string;
   user: UserContext;
   timerClients: TimerClientOption[];
@@ -72,6 +85,27 @@ export function TopMenu({
   const [addNotes, setAddNotes] = useState("");
   const [addError, setAddError] = useState("");
   const [addSaving, setAddSaving] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(() => {
+    if (!activeTimer) {
+      return 0;
+    }
+    return Math.max(0, Math.floor((Date.now() - new Date(activeTimer.startedAt).getTime()) / 1000));
+  });
+  const [stopSaving, setStopSaving] = useState(false);
+
+  useEffect(() => {
+    if (!activeTimer) {
+      setElapsedSeconds(0);
+      return;
+    }
+
+    const updateElapsed = () => {
+      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - new Date(activeTimer.startedAt).getTime()) / 1000)));
+    };
+    updateElapsed();
+    const timer = window.setInterval(updateElapsed, 1000);
+    return () => window.clearInterval(timer);
+  }, [activeTimer?.id, activeTimer?.startedAt]);
 
   const firmClient = useMemo(
     () => timerClients.find((client) => client.code === INTERNAL_FIRM_CLIENT_CODE || client.name === "Firm"),
@@ -205,6 +239,38 @@ export function TopMenu({
     }
   }
 
+  function formatElapsed(totalSeconds: number) {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return [hours, minutes, seconds].map((value) => String(value).padStart(2, "0")).join(":");
+  }
+
+  async function onStopTimer() {
+    if (!activeTimer || stopSaving) {
+      return;
+    }
+    setStopSaving(true);
+    try {
+      const response = await fetch(`/api/timer/stop?firmSlug=${firmSlug}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json()) as { error?: string };
+        throw new Error(payload.error || "Failed to stop timer");
+      }
+
+      router.refresh();
+    } catch (submitError) {
+      setStartError(submitError instanceof Error ? submitError.message : "Failed to stop timer");
+    } finally {
+      setStopSaving(false);
+    }
+  }
+
   return (
     <>
       <header className="cb-topbar">
@@ -241,6 +307,18 @@ export function TopMenu({
           </div>
 
           <div className="ml-auto flex items-center gap-2">
+            {activeTimer ? (
+              <button
+                className="inline-flex h-11 min-w-[220px] items-center justify-between rounded-xl border border-[#1c3a28] bg-[#1c3a28] px-5 text-lg font-medium text-white"
+                disabled={stopSaving}
+                onClick={onStopTimer}
+                title="Stop timer"
+                type="button"
+              >
+                <span className="tabular-nums tracking-wide">{stopSaving ? "Stopping..." : formatElapsed(elapsedSeconds)}</span>
+                <IconStop />
+              </button>
+            ) : null}
             <button className="button-secondary h-11 gap-2 px-5 text-base" onClick={() => setOpenAdd(true)} type="button">
               + Add Timer
             </button>
