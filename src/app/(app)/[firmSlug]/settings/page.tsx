@@ -474,16 +474,12 @@ export default async function SettingsPage({
     isAdmin
       ? prisma.workstream.findMany({
           where: { tenantId: user.tenantId ?? "" },
-          include: { client: { select: { name: true, code: true } } },
-          orderBy: [{ client: { name: "asc" } }, { name: "asc" }]
+          orderBy: [{ name: "asc" }]
         })
       : Promise.resolve([]),
     isAdmin
       ? prisma.lockedPeriod.findMany({
           where: { tenantId: user.tenantId ?? "" },
-          include: {
-            lockedByUser: { select: { name: true } }
-          },
           orderBy: [{ periodYear: "desc" }, { periodMonth: "desc" }]
         })
       : Promise.resolve([])
@@ -505,22 +501,37 @@ export default async function SettingsPage({
   const sections = isAdmin ? adminSections : memberSections;
   const activeSection = sections.some((item) => item.id === section) ? section! : "profile";
   const tenantSettings = normalizeTenantSettings(tenant?.settingsJson);
+  const clientById = new Map(clients.map((client) => [client.id, client]));
+  const userById = new Map(users.map((member) => [member.id, member]));
+  const sortedWorkstreams = [...workstreams].sort((a, b) => {
+    const aClientName = clientById.get(a.clientId)?.name ?? "";
+    const bClientName = clientById.get(b.clientId)?.name ?? "";
+    return aClientName.localeCompare(bClientName) || a.name.localeCompare(b.name);
+  });
   const billableClients = clients.filter((client) => client.code !== INTERNAL_FIRM_CLIENT_CODE);
-  const firmWorkstreams = workstreams.filter((workstream) => workstream.client.code === INTERNAL_FIRM_CLIENT_CODE);
-  const missingWorkstreamGroups = workstreams
-    .filter((workstream) => workstream.client.code !== INTERNAL_FIRM_CLIENT_CODE)
+  const firmWorkstreams = sortedWorkstreams.filter((workstream) => {
+    const client = clientById.get(workstream.clientId);
+    return client?.code === INTERNAL_FIRM_CLIENT_CODE;
+  });
+  const missingWorkstreamGroups = sortedWorkstreams
+    .filter((workstream) => {
+      const client = clientById.get(workstream.clientId);
+      return client?.code !== INTERNAL_FIRM_CLIENT_CODE;
+    })
     .filter((workstream) => workstream.billingRate == null)
     .reduce<Map<string, { name: string; clients: string[]; count: number }>>((map, workstream) => {
+      const client = clientById.get(workstream.clientId);
+      const clientName = client?.name ?? "Unknown client";
       const existing = map.get(workstream.name);
       if (existing) {
         existing.count += 1;
-        if (!existing.clients.includes(workstream.client.name)) {
-          existing.clients.push(workstream.client.name);
+        if (!existing.clients.includes(clientName)) {
+          existing.clients.push(clientName);
         }
       } else {
         map.set(workstream.name, {
           name: workstream.name,
-          clients: [workstream.client.name],
+          clients: [clientName],
           count: 1
         });
       }
@@ -725,7 +736,7 @@ export default async function SettingsPage({
               </div>
               <ul className="space-y-3">
                 {billableClients.map((client) => {
-                  const clientWorkstreams = workstreams.filter((workstream) => workstream.clientId === client.id);
+                  const clientWorkstreams = sortedWorkstreams.filter((workstream) => workstream.clientId === client.id);
                   return (
                     <li key={client.id} className="rounded-lg border border-[#ddd9d0] bg-[#f7f4ef]">
                       <details>
@@ -832,7 +843,7 @@ export default async function SettingsPage({
                       {lockedPeriods.map((period) => (
                         <tr key={period.id} className="border-b border-slate-100">
                           <td className="py-2">{period.periodYear}-{String(period.periodMonth).padStart(2, "0")}</td>
-                          <td className="py-2">{period.lockedByUser.name}</td>
+                          <td className="py-2">{userById.get(period.lockedByUserId)?.name ?? "Unknown user"}</td>
                           <td className="py-2">{period.lockedAt.toLocaleString()}</td>
                           <td className="py-2">{period.unlockedAt ? "Unlocked" : "Locked"}</td>
                           <td className="py-2">
