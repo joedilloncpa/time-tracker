@@ -23,6 +23,10 @@ function parseDecimal(value: FormDataEntryValue | null) {
   return Number.isNaN(parsed) ? null : parsed;
 }
 
+function uniqueValues<T>(values: T[]) {
+  return [...new Set(values)];
+}
+
 async function resolveTenantContext(firmSlug: string) {
   const [user, tenant] = await Promise.all([
     getUserContext(firmSlug),
@@ -82,33 +86,55 @@ async function createWorkstreams(formData: FormData) {
   redirect(`/${firmSlug}/workstreams`);
 }
 
-async function updateWorkstream(formData: FormData) {
+async function updateWorkstreamGroup(formData: FormData) {
   "use server";
   const firmSlug = String(formData.get("firmSlug") || "");
   const { user, tenantId } = await resolveTenantContext(firmSlug);
   ensureRole(user, ["firm_admin", "super_admin"]);
 
-  const workstreamId = String(formData.get("workstreamId") || "");
+  const workstreamIds = String(formData.get("workstreamIds") || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
   const name = String(formData.get("name") || "").trim();
-  const clientId = String(formData.get("clientId") || "");
-  const billingType = String(formData.get("billingType") || "hourly") as BillingType;
-  const status = String(formData.get("status") || "active") as WorkstreamStatus;
+  const billingTypeRaw = String(formData.get("billingType") || "").trim();
+  const statusRaw = String(formData.get("status") || "").trim();
+  const clearRate = formData.get("clearRate") === "1";
+  const rateRaw = String(formData.get("billingRate") || "").trim();
   const includeArchived = String(formData.get("includeArchived") || "") === "1";
   const selectedClientIds = String(formData.get("selectedClientIds") || "");
 
-  if (!workstreamId || !name || !clientId) {
-    throw new Error("Workstream, name, and client are required");
+  if (!workstreamIds.length || !name) {
+    throw new Error("Workstream ids and name are required");
+  }
+
+  const data: {
+    name: string;
+    billingType?: BillingType;
+    status?: WorkstreamStatus;
+    billingRate?: number | null;
+  } = { name };
+
+  if (billingTypeRaw === "hourly" || billingTypeRaw === "fixed" || billingTypeRaw === "retainer") {
+    data.billingType = billingTypeRaw;
+  }
+  if (statusRaw === "active" || statusRaw === "paused" || statusRaw === "complete" || statusRaw === "archived") {
+    data.status = statusRaw;
+  }
+
+  if (clearRate) {
+    data.billingRate = null;
+  } else if (rateRaw !== "") {
+    const parsedRate = parseDecimal(rateRaw);
+    if (parsedRate === null) {
+      throw new Error("Billing rate must be a valid number");
+    }
+    data.billingRate = parsedRate;
   }
 
   await prisma.workstream.updateMany({
-    where: { id: workstreamId, tenantId },
-    data: {
-      name,
-      clientId,
-      billingType,
-      billingRate: parseDecimal(formData.get("billingRate")),
-      status
-    }
+    where: { id: { in: workstreamIds }, tenantId },
+    data
   });
 
   revalidatePath(`/${firmSlug}/workstreams`);
@@ -185,6 +211,40 @@ export default async function WorkstreamsPage({
         })
       : [];
   const workstreams = fallbackWorkstreams.length > 0 ? fallbackWorkstreams : defaultWorkstreams;
+  const workstreamGroups = Array.from(
+    workstreams.reduce<
+      Map<
+        string,
+        {
+          name: string;
+          rows: typeof workstreams;
+          clientNames: string[];
+        }
+      >
+    >((map, workstream) => {
+      const key = workstream.name.trim().toLowerCase();
+      const existing = map.get(key);
+      if (existing) {
+        existing.rows.push(workstream);
+        if (!existing.clientNames.includes(workstream.client.name)) {
+          existing.clientNames.push(workstream.client.name);
+        }
+      } else {
+        map.set(key, {
+          name: workstream.name,
+          rows: [workstream],
+          clientNames: [workstream.client.name]
+        });
+      }
+      return map;
+    }, new Map())
+      .values()
+  )
+    .map((group) => ({
+      ...group,
+      clientNames: group.clientNames.sort((a, b) => a.localeCompare(b))
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <main className="space-y-6">
@@ -218,63 +278,87 @@ export default async function WorkstreamsPage({
         </form>
 
         <ul className="space-y-3">
-          {workstreams.length === 0 ? (
+          {workstreamGroups.length === 0 ? (
             <li className="rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] p-4 text-sm text-[#7a7a70]">
               No workstreams found.
             </li>
           ) : null}
-          {workstreams.map((workstream) => (
-            <li key={workstream.id} className="rounded-lg border border-[#ddd9d0] p-4">
+          {workstreamGroups.map((group) => {
+            const billingTypes = uniqueValues(group.rows.map((row) => row.billingType));
+            const statuses = uniqueValues(group.rows.map((row) => row.status));
+            const rates = uniqueValues(group.rows.map((row) => (row.billingRate == null ? null : Number(row.billingRate))));
+            const sharedBillingType = billingTypes.length === 1 ? billingTypes[0] : "";
+            const sharedStatus = statuses.length === 1 ? statuses[0] : "";
+            const sharedRate = rates.length === 1 ? rates[0] : undefined;
+
+            return (
+              <li key={group.name} className="rounded-lg border border-[#ddd9d0] p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="font-semibold text-[#1a2e1f]">{workstream.name}</p>
-                  <p className="text-sm text-[#7a7a70]">{workstream.client.name}</p>
+                  <p className="font-semibold text-[#1a2e1f]">{group.name}</p>
+                  <p className="text-sm text-[#7a7a70]">
+                    Used by {group.clientNames.length} client{group.clientNames.length === 1 ? "" : "s"}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-[#7a7a70]">
-                  <span>{workstream.status}</span>
+                  <span>{sharedStatus || "mixed status"}</span>
                   <span>•</span>
-                  <span>{workstream.billingType}</span>
+                  <span>{sharedBillingType || "mixed billing type"}</span>
                   <span>•</span>
-                  <span>{workstream.billingRate == null ? "No rate" : `$${Number(workstream.billingRate).toFixed(2)}/hr`}</span>
+                  <span>
+                    {sharedRate === undefined ? "mixed rates" : sharedRate == null ? "No rate" : `$${Number(sharedRate).toFixed(2)}/hr`}
+                  </span>
                 </div>
               </div>
+              <details className="mt-2">
+                <summary className="button-secondary w-fit cursor-pointer px-3 py-2 text-sm">
+                  Clients ({group.clientNames.length})
+                </summary>
+                <ul className="mt-2 rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] p-3 text-sm text-[#4a4a42]">
+                  {group.clientNames.map((clientName) => (
+                    <li key={`${group.name}-${clientName}`}>{clientName}</li>
+                  ))}
+                </ul>
+              </details>
 
               {isAdmin ? (
-                <form action={updateWorkstream} className="mt-3 grid gap-3 rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] p-3 md:grid-cols-3">
+                <form action={updateWorkstreamGroup} className="mt-3 grid gap-3 rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] p-3 md:grid-cols-3">
                   <input name="firmSlug" type="hidden" value={firmSlug} />
-                  <input name="workstreamId" type="hidden" value={workstream.id} />
+                  <input name="workstreamIds" type="hidden" value={group.rows.map((row) => row.id).join(",")} />
                   <input name="includeArchived" type="hidden" value={includeArchived ? "1" : "0"} />
                   <input name="selectedClientIds" type="hidden" value={selectedClientIds.join(",")} />
-                  <input className="input" defaultValue={workstream.name} name="name" placeholder="Workstream name" required />
-                  <select className="input" defaultValue={workstream.clientId} name="clientId">
-                    {clients.map((client) => (
-                      <option key={client.id} value={client.id}>{client.name}</option>
-                    ))}
-                  </select>
+                  <input className="input" defaultValue={group.name} name="name" placeholder="Workstream name" required />
                   <input
                     className="input"
-                    defaultValue={workstream.billingRate == null ? "" : Number(workstream.billingRate).toString()}
+                    defaultValue={sharedRate == null || sharedRate === undefined ? "" : Number(sharedRate).toString()}
                     name="billingRate"
-                    placeholder="Billing rate"
+                    placeholder={sharedRate === undefined ? "Mixed rates (set new rate)" : "Billing rate"}
                     step="0.01"
                     type="number"
                   />
-                  <select className="input" defaultValue={workstream.billingType} name="billingType">
+                  <select className="input" defaultValue={sharedBillingType} name="billingType">
+                    <option value="">Keep existing billing types</option>
                     <option value="hourly">hourly</option>
                     <option value="fixed">fixed</option>
                     <option value="retainer">retainer</option>
                   </select>
-                  <select className="input" defaultValue={workstream.status} name="status">
+                  <select className="input" defaultValue={sharedStatus} name="status">
+                    <option value="">Keep existing statuses</option>
                     <option value="active">active</option>
                     <option value="paused">paused</option>
                     <option value="complete">complete</option>
                     <option value="archived">archived</option>
                   </select>
-                  <button className="button md:justify-self-end" type="submit">Save</button>
+                  <label className="inline-flex items-center gap-2 text-sm text-[#4a4a42]">
+                    <input name="clearRate" type="checkbox" value="1" />
+                    Clear rates for all clients
+                  </label>
+                  <button className="button md:justify-self-end" type="submit">Save all client rows</button>
                 </form>
               ) : null}
             </li>
-          ))}
+            );
+          })}
         </ul>
       </section>
 
