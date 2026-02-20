@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import type { Route } from "next";
 import { getUserContext, isAuthError } from "@/lib/auth";
 import { LoginForm } from "@/components/login-form";
+import { prisma } from "@/lib/db";
 
 function normalizeNextPath(nextPath: string | undefined) {
   if (!nextPath || !nextPath.startsWith("/") || nextPath.startsWith("//")) {
@@ -10,9 +11,26 @@ function normalizeNextPath(nextPath: string | undefined) {
   return nextPath;
 }
 
-function getDefaultRedirect(user: Awaited<ReturnType<typeof getUserContext>>): Route {
+async function getDefaultRedirect(user: Awaited<ReturnType<typeof getUserContext>>): Promise<Route> {
   if (user.isSuperAdmin) {
-    return "/admin";
+    const preferredFirm = await prisma.tenant.findFirst({
+      where: { slug: "chainbridge" },
+      select: { slug: true }
+    });
+    if (preferredFirm?.slug) {
+      return `/${preferredFirm.slug}/dashboard` as Route;
+    }
+    if (user.tenantSlug) {
+      return `/${user.tenantSlug}/dashboard` as Route;
+    }
+    const firstFirm = await prisma.tenant.findFirst({
+      select: { slug: true },
+      orderBy: { createdAt: "asc" }
+    });
+    if (firstFirm?.slug) {
+      return `/${firstFirm.slug}/dashboard` as Route;
+    }
+    return "/login";
   }
   return user.tenantSlug ? (`/${user.tenantSlug}/dashboard` as Route) : "/";
 }
@@ -31,7 +49,7 @@ export default async function LoginPage({
 
   try {
     const user = await getUserContext();
-    redirect(getDefaultRedirect(user));
+    redirect(await getDefaultRedirect(user));
   } catch (error) {
     if (!isAuthError(error, ["unauthorized", "not_provisioned"])) {
       throw error;
