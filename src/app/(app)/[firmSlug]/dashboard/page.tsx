@@ -143,10 +143,7 @@ export default async function DashboardPage({
     }),
     prisma.user.findMany({
       where: {
-        tenantId: user.tenantId ?? "",
-        role: {
-          not: "super_admin"
-        }
+        tenantId: user.tenantId ?? ""
       },
       select: {
         id: true,
@@ -157,6 +154,11 @@ export default async function DashboardPage({
       }
     })
   ]);
+
+  const visibleClientIds = new Set(clients.map((client) => client.id));
+  const appliedClientIds = selectedClientIds.length
+    ? selectedClientIds.filter((clientId) => visibleClientIds.has(clientId))
+    : clients.map((client) => client.id);
 
   const entries = showBillable || showNonBillable
     ? await prisma.timeEntry.findMany({
@@ -177,11 +179,10 @@ export default async function DashboardPage({
             : showBillable
               ? { isBillable: true }
               : { isBillable: false }),
-          ...(selectedClientIds.length ? { clientId: { in: selectedClientIds } } : {}),
+          ...(appliedClientIds.length ? { clientId: { in: appliedClientIds } } : { clientId: "" }),
           ...(isAdmin
             ? (selectedEmployeeIds.length ? { userId: { in: selectedEmployeeIds } } : {})
             : { userId: user.id }),
-          ...(clients.length ? { clientId: { in: clients.map((client) => client.id) } } : { clientId: "" })
         },
         include: {
           client: true,
