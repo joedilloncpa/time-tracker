@@ -10,6 +10,7 @@ import { prisma } from "@/lib/db";
 import { getUserContext, isAuthError } from "@/lib/auth";
 import { ensureRole } from "@/lib/permissions";
 import { ExcelFilterField } from "@/components/excel-filter-field";
+import { FormSubmitButton } from "@/components/form-submit-button";
 import { ensureFirmWorkArea, INTERNAL_FIRM_CLIENT_CODE } from "@/lib/firm-work";
 import { assertTenantBySlug } from "@/lib/tenant";
 import {
@@ -655,7 +656,9 @@ export default async function SettingsPage({
                     <option value="firm_user">Team Member</option>
                     <option value="firm_admin">Firm Admin</option>
                   </select>
-                  <button className="button w-fit px-5" type="submit">Invite</button>
+                  <FormSubmitButton className="button w-fit px-5" pendingText="Inviting..." successText="Invited">
+                    Invite
+                  </FormSubmitButton>
                 </form>
               </section>
 
