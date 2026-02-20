@@ -8,6 +8,7 @@ import { ensureRole } from "@/lib/permissions";
 import { ensureFirmWorkArea } from "@/lib/firm-work";
 import { UserContext } from "@/lib/types";
 import { UserMenu } from "@/components/user-menu";
+import { FormSubmitButton } from "@/components/form-submit-button";
 
 function safeHostFromUrl(value?: string) {
   if (!value) {
@@ -338,7 +339,9 @@ export default async function SuperAdminPage() {
           <input className="input" name="firmSlug" placeholder="Slug (optional)" />
           <input className="input" name="adminName" placeholder="Admin name" />
           <input className="input" name="adminEmail" type="email" placeholder="Admin email" required />
-          <button className="button md:col-span-1" type="submit">Create firm</button>
+          <FormSubmitButton className="button md:col-span-1" pendingText="Creating..." successText="Created">
+            Create firm
+          </FormSubmitButton>
         </form>
       </section>
       <section className="card">
@@ -361,7 +364,9 @@ export default async function SuperAdminPage() {
                     <option value="canceled">canceled</option>
                     <option value="inactive">inactive</option>
                   </select>
-                  <button className="button-secondary h-9 px-2 text-xs" type="submit">Update</button>
+                  <FormSubmitButton className="button-secondary h-9 px-2 text-xs" pendingText="Updating...">
+                    Update
+                  </FormSubmitButton>
                 </form>
                 <Link href={`/${firm.slug}/dashboard`} className="button-secondary">Impersonate</Link>
               </div>
@@ -401,7 +406,9 @@ export default async function SuperAdminPage() {
                         <option value="true">active</option>
                         <option value="false">inactive</option>
                       </select>
-                      <button className="button-secondary h-9 px-2 text-xs" type="submit">Save</button>
+                      <FormSubmitButton className="button-secondary h-9 px-2 text-xs" pendingText="Saving...">
+                        Save
+                      </FormSubmitButton>
                     </form>
                   </td>
                   <td className="py-2">{member.isActive ? "Active" : "Inactive"}</td>

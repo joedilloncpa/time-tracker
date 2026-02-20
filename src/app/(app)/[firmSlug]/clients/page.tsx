@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { ExcelFilterField } from "@/components/excel-filter-field";
 import { INTERNAL_FIRM_CLIENT_CODE } from "@/lib/firm-work";
 import { assertTenantBySlug } from "@/lib/tenant";
+import { FormSubmitButton } from "@/components/form-submit-button";
 
 function parseClientStatus(value: FormDataEntryValue | null): ClientStatus {
   const normalized = String(value ?? "").trim();
@@ -286,7 +287,9 @@ export default async function ClientsPage({
                       <input defaultChecked={client.status === "inactive"} name="isInactive" type="checkbox" />
                       Make client inactive
                     </label>
-                    <button className="button md:justify-self-end" type="submit">Save</button>
+                    <FormSubmitButton className="button md:justify-self-end" pendingText="Saving...">
+                      Save
+                    </FormSubmitButton>
                   </form>
                 </details>
               </div>
@@ -371,9 +374,9 @@ export default async function ClientsPage({
                 <Link className="button-secondary px-4" href={`/${firmSlug}/clients`}>
                   Cancel
                 </Link>
-                <button className="button px-5" type="submit">
+                <FormSubmitButton className="button px-5" pendingText="Creating..." successText="Created">
                   Create client
-                </button>
+                </FormSubmitButton>
               </div>
             </form>
           </div>
@@ -410,9 +413,9 @@ export default async function ClientsPage({
                 <Link className="button-secondary px-4" href={`/${firmSlug}/clients`}>
                   Cancel
                 </Link>
-                <button className="button px-5" type="submit">
+                <FormSubmitButton className="button px-5" pendingText="Creating..." successText="Created">
                   Create workstream
-                </button>
+                </FormSubmitButton>
               </div>
             </form>
           </div>

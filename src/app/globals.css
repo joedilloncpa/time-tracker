@@ -81,6 +81,12 @@ body {
   border-color: var(--orange-cta-hover);
 }
 
+.button:disabled,
+.button-secondary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .button-secondary {
   display: inline-flex;
   height: 40px;
@@ -98,6 +104,25 @@ body {
 .button-secondary:hover {
   background: var(--cream-100);
   color: var(--green-text);
+}
+
+.button-danger {
+  display: inline-flex;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid #b9382f;
+  background: #b9382f;
+  padding: 0 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+}
+
+.button-danger:hover {
+  background: #a22f27;
+  border-color: #a22f27;
 }
 
 .button-start {
