@@ -51,6 +51,7 @@ async function updateClient(formData: FormData) {
   "use server";
   const firmSlug = String(formData.get("firmSlug") || "");
   const { tenantId } = await resolveTenantContext(firmSlug);
+  const includeInactive = String(formData.get("includeInactive") || "") === "1";
   const clientId = String(formData.get("clientId") || "");
   const name = String(formData.get("name") || "").trim();
 
@@ -83,6 +84,8 @@ async function updateClient(formData: FormData) {
   });
 
   revalidatePath(`/${firmSlug}/clients`);
+  const query = includeInactive ? "?includeInactive=1" : "";
+  redirect(`/${firmSlug}/clients${query}`);
 }
 
 async function createWorkstream(formData: FormData) {
@@ -232,6 +235,7 @@ export default async function ClientsPage({
                   <form action={updateClient} className="mt-3 grid gap-3 rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] p-3 md:grid-cols-3">
                     <input type="hidden" name="firmSlug" value={firmSlug} />
                     <input type="hidden" name="clientId" value={client.id} />
+                    <input type="hidden" name="includeInactive" value={showInactiveClients ? "1" : "0"} />
                     <input className="input" defaultValue={client.name} name="name" placeholder="Client name" required />
                     <input className="input" defaultValue={client.code ?? ""} name="code" placeholder="Code" />
                     <input className="input" defaultValue={client.contactName ?? ""} name="contactName" placeholder="Primary contact" />
