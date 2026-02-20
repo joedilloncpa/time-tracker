@@ -544,6 +544,8 @@ export default async function SettingsPage({
   const tenantSettings = normalizeTenantSettings(tenant?.settingsJson);
   const clientById = new Map(clients.map((client) => [client.id, client]));
   const userById = new Map(users.map((member) => [member.id, member]));
+  const pendingInvites = users.filter((member) => !member.supabaseAuthId);
+  const activeMembers = users.filter((member) => !!member.supabaseAuthId);
   const sortedWorkstreams = [...workstreams].sort((a, b) => {
     const aClientName = clientById.get(a.clientId)?.name ?? "";
     const bClientName = clientById.get(b.clientId)?.name ?? "";
@@ -663,9 +665,41 @@ export default async function SettingsPage({
               </section>
 
               <section className="card space-y-3">
+                <h2 className="text-lg font-semibold">Pending Invites</h2>
+                {pendingInvites.length === 0 ? (
+                  <p className="text-sm text-[#7a7a70]">No pending invites.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {pendingInvites.map((member) => (
+                      <li key={member.id} className="rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <p className="font-medium text-[#1a2e1f]">{member.name}</p>
+                            <p className="text-sm text-[#7a7a70]">{member.email}</p>
+                            <p className="text-xs text-[#7a7a70]">
+                              Invited {member.createdAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <span className="inline-flex rounded-full bg-[rgba(196,83,26,0.12)] px-2 py-0.5 text-xs font-medium text-[#c4531a]">
+                              Pending acceptance
+                            </span>
+                            <p className="mt-1 text-xs text-[#7a7a70]">{member.role === "firm_admin" ? "Firm Admin" : "Team Member"}</p>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+
+              <section className="card space-y-3">
                 <h2 className="text-lg font-semibold">Manage Users</h2>
+                {activeMembers.length === 0 ? (
+                  <p className="text-sm text-[#7a7a70]">No active users yet.</p>
+                ) : null}
                 <ul className="space-y-3">
-                  {users.map((member) => {
+                  {activeMembers.map((member) => {
                     const allowed = getAllowedClientIdsForUser(tenantSettings, member.id, member.role);
                     return (
                       <li key={member.id} className="rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] p-3">
