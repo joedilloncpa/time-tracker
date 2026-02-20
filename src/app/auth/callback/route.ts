@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
 
 function normalizeNextPath(nextPath: string | null) {
   if (!nextPath || !nextPath.startsWith("/") || nextPath.startsWith("//")) {
@@ -15,10 +13,6 @@ export async function GET(request: NextRequest) {
   const oauthError = request.nextUrl.searchParams.get("error");
   const oauthErrorDescription = request.nextUrl.searchParams.get("error_description");
 
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
   if (oauthError) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("error", "oauth_error");
@@ -29,36 +23,10 @@ export async function GET(request: NextRequest) {
   }
 
   if (code) {
-    const cookieStore = await cookies();
-    type CookieToSet = {
-      name: string;
-      value: string;
-      options?: Parameters<typeof cookieStore.set>[2];
-    };
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookieValues: CookieToSet[]) {
-            cookieValues.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
-            });
-          }
-        }
-      }
-    );
-
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("error", "oauth_exchange_failed");
-      loginUrl.searchParams.set("message", error.message || "Unable to complete Google sign in");
-      return NextResponse.redirect(loginUrl);
-    }
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("oauth_code", code);
+    loginUrl.searchParams.set("next", nextPath);
+    return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.redirect(new URL(nextPath, request.url));

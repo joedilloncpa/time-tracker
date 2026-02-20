@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { getBrowserSupabaseClient } from "@/lib/supabase-browser";
 
 function normalizeNextPath(nextPath: string) {
@@ -10,13 +10,35 @@ function normalizeNextPath(nextPath: string) {
   return nextPath;
 }
 
-export function LoginForm({ nextPath }: { nextPath: string }) {
+export function LoginForm({ nextPath, oauthCode }: { nextPath: string; oauthCode: string }) {
   const safeNextPath = normalizeNextPath(nextPath);
   const supabase = useMemo(() => getBrowserSupabaseClient(), []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function completeOAuth() {
+      if (!oauthCode || !supabase) {
+        return;
+      }
+
+      setLoading(true);
+      setError("");
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(oauthCode);
+      setLoading(false);
+
+      if (exchangeError) {
+        setError(exchangeError.message || "Unable to complete Google sign in");
+        return;
+      }
+
+      window.location.assign(safeNextPath);
+    }
+
+    void completeOAuth();
+  }, [oauthCode, safeNextPath, supabase]);
 
   async function onPasswordSignIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
