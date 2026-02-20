@@ -86,6 +86,12 @@ function normalizePersonName(value: string) {
   return value.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
+function billingMonthKey(date: Date) {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
 export default async function DashboardPage({
   params,
   searchParams
@@ -105,7 +111,7 @@ export default async function DashboardPage({
     query.period === "last_month" ||
     query.period === "custom"
       ? query.period
-      : "all";
+      : "this_month";
   const isAdmin = user.role === "firm_admin" || user.role === "super_admin";
   const includeInactive = query.includeInactive === "1";
   const showBillable = query.billable !== "0";
@@ -292,6 +298,7 @@ export default async function DashboardPage({
     }
   >();
   const timerRowsByClient = new Map<string, typeof entries>();
+  const fixedBillingApplied = new Set<string>();
 
   for (const entry of entries) {
     const clientRate = Number(entry.workstream.billingRate ?? entry.client.defaultBillingRate ?? 0);
@@ -306,7 +313,18 @@ export default async function DashboardPage({
     };
 
     currentClient.minutes += entry.durationMinutes;
-    currentClient.totalBilling += entry.isBillable ? hours * clientRate : 0;
+    if (entry.isBillable) {
+      if (entry.workstream.billingType === "fixed") {
+        const fixedFeeAmount = Number(entry.workstream.fixedFeeAmount ?? 0);
+        const fixedBillingKey = `${entry.clientId}:${entry.workstreamId}:${billingMonthKey(entry.date)}`;
+        if (fixedFeeAmount > 0 && !fixedBillingApplied.has(fixedBillingKey)) {
+          currentClient.totalBilling += fixedFeeAmount;
+          fixedBillingApplied.add(fixedBillingKey);
+        }
+      } else {
+        currentClient.totalBilling += hours * clientRate;
+      }
+    }
     currentClient.totalCost += hours * userCostRate;
     clientRows.set(entry.clientId, currentClient);
 

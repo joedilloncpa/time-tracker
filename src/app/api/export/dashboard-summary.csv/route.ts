@@ -43,6 +43,12 @@ function parseIds(raw: string | null) {
   return (raw ?? "").split(",").map((id) => id.trim()).filter(Boolean);
 }
 
+function billingMonthKey(date: Date) {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
 export async function GET(request: NextRequest) {
   const { user } = await getApiContextFromSearchParams(request.nextUrl.searchParams);
   const periodRaw = request.nextUrl.searchParams.get("period");
@@ -54,7 +60,7 @@ export async function GET(request: NextRequest) {
     periodRaw === "last_month" ||
     periodRaw === "custom"
       ? periodRaw
-      : "all";
+      : "this_month";
   const includeInactive = request.nextUrl.searchParams.get("includeInactive") === "1";
   const showBillable = request.nextUrl.searchParams.get("billable") !== "0";
   const showNonBillable = request.nextUrl.searchParams.get("nonBillable") !== "0";
@@ -104,6 +110,7 @@ export async function GET(request: NextRequest) {
       profit_loss: number;
     }
   >();
+  const fixedBillingApplied = new Set<string>();
 
   for (const entry of entries) {
     const hours = entry.durationMinutes / 60;
@@ -121,7 +128,18 @@ export async function GET(request: NextRequest) {
     };
 
     current.hours += hours;
-    current.total_billing += entry.isBillable ? hours * rate : 0;
+    if (entry.isBillable) {
+      if (entry.workstream.billingType === "fixed") {
+        const fixedFeeAmount = Number(entry.workstream.fixedFeeAmount ?? 0);
+        const fixedBillingKey = `${entry.clientId}:${entry.workstreamId}:${billingMonthKey(entry.date)}`;
+        if (fixedFeeAmount > 0 && !fixedBillingApplied.has(fixedBillingKey)) {
+          current.total_billing += fixedFeeAmount;
+          fixedBillingApplied.add(fixedBillingKey);
+        }
+      } else {
+        current.total_billing += hours * rate;
+      }
+    }
     current.total_cost += hours * costRate;
     clientRows.set(entry.clientId, current);
   }

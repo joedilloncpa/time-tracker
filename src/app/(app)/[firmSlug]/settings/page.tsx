@@ -21,6 +21,8 @@ import { getAuthRedirectOrigin } from "@/lib/url";
 
 type SettingsParams = {
   section?: string;
+  inviteError?: string;
+  inviteSuccess?: string;
 };
 
 function parseDecimal(value: FormDataEntryValue | null) {
@@ -110,65 +112,76 @@ async function changePassword(formData: FormData) {
 async function inviteUser(formData: FormData) {
   "use server";
   const firmSlug = String(formData.get("firmSlug") || "");
-  const user = await getUserContext(firmSlug);
-  ensureRole(user, ["firm_admin", "super_admin"]);
+  const redirectBase = `/${firmSlug}/settings?section=users`;
+  const redirectWithError = (message: string) => {
+    redirect(`${redirectBase}&inviteError=${encodeURIComponent(message)}`);
+  };
 
-  const email = String(formData.get("email") || "").trim().toLowerCase();
-  const name = String(formData.get("name") || "").trim();
-  const roleValue = String(formData.get("role") || "firm_user");
-  const role = roleValue === "firm_admin" ? "firm_admin" : "firm_user";
+  try {
+    const user = await getUserContext(firmSlug);
+    ensureRole(user, ["firm_admin", "super_admin"]);
 
-  if (!email) {
-    throw new Error("Email is required");
-  }
+    const email = String(formData.get("email") || "").trim().toLowerCase();
+    const name = String(formData.get("name") || "").trim();
+    const roleValue = String(formData.get("role") || "firm_user");
+    const role = roleValue === "firm_admin" ? "firm_admin" : "firm_user";
 
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error("Supabase invite is not configured. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
-  }
+    if (!email) {
+      redirectWithError("Email is required");
+    }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing && existing.tenantId && existing.tenantId !== user.tenantId) {
-    throw new Error("This email already belongs to another firm");
-  }
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      redirectWithError("Supabase invite is not configured.");
+    }
 
-  if (existing) {
-    await prisma.user.update({
-      where: { id: existing.id },
-      data: {
-        tenantId: user.tenantId ?? "",
-        role,
-        isActive: true,
-        name: name || existing.name
-      }
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing && existing.tenantId && existing.tenantId !== user.tenantId) {
+      redirectWithError("This email already belongs to another firm");
+    }
+
+    if (existing) {
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          tenantId: user.tenantId ?? "",
+          role,
+          isActive: true,
+          name: name || existing.name
+        }
+      });
+    } else {
+      await prisma.user.create({
+        data: {
+          tenantId: user.tenantId ?? "",
+          email,
+          name: name || email.split("@")[0],
+          role
+        }
+      });
+    }
+
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const requestHeaders = await headers();
+    const authOrigin = getAuthRedirectOrigin(requestHeaders);
+    const redirectTo = authOrigin ? `${authOrigin}/auth/callback` : undefined;
+    const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+      ...(redirectTo ? { redirectTo } : {})
     });
-  } else {
-    await prisma.user.create({
-      data: {
-        tenantId: user.tenantId ?? "",
-        email,
-        name: name || email.split("@")[0],
-        role
-      }
-    });
+
+    if (error) {
+      redirectWithError(error.message || "Unable to send invite email");
+    }
+
+    revalidatePath(`/${firmSlug}/settings`);
+    redirect(`${redirectBase}&inviteSuccess=1`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to send invite email";
+    redirectWithError(message);
   }
-
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-
-  const requestHeaders = await headers();
-  const authOrigin = getAuthRedirectOrigin(requestHeaders);
-  const redirectTo = authOrigin ? `${authOrigin}/auth/callback` : undefined;
-  const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-    ...(redirectTo ? { redirectTo } : {})
-  });
-
-  if (error) {
-    throw new Error(error.message || "Unable to send invite email");
-  }
-
-  revalidatePath(`/${firmSlug}/settings`);
 }
 
 async function updateUserRole(formData: FormData) {
@@ -449,7 +462,7 @@ export default async function SettingsPage({
   searchParams: Promise<SettingsParams>;
 }) {
   const { firmSlug } = await params;
-  const { section } = await searchParams;
+  const { section, inviteError, inviteSuccess } = await searchParams;
   await assertTenantBySlug(firmSlug).catch(() => null);
 
   let user: Awaited<ReturnType<typeof getUserContext>>;
@@ -613,6 +626,16 @@ export default async function SettingsPage({
             <>
               <section className="card space-y-3">
                 <h2 className="text-lg font-semibold">Invite Team Member</h2>
+                {inviteError ? (
+                  <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {inviteError}
+                  </p>
+                ) : null}
+                {inviteSuccess === "1" ? (
+                  <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                    Invite sent successfully.
+                  </p>
+                ) : null}
                 <form action={inviteUser} className="grid gap-3 md:grid-cols-4">
                   <input name="firmSlug" type="hidden" value={firmSlug} />
                   <input className="input md:col-span-2" name="email" placeholder="Email" required type="email" />
