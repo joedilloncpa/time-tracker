@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import type { Route } from "next";
 import { getUserContext, isAuthError } from "@/lib/auth";
 import { LoginForm } from "@/components/login-form";
 
@@ -9,11 +10,11 @@ function normalizeNextPath(nextPath: string | undefined) {
   return nextPath;
 }
 
-function getDefaultRedirect(user: Awaited<ReturnType<typeof getUserContext>>) {
+function getDefaultRedirect(user: Awaited<ReturnType<typeof getUserContext>>): Route {
   if (user.role === "super_admin") {
     return "/admin";
   }
-  return user.tenantSlug ? `/${user.tenantSlug}/dashboard` : "/";
+  return user.tenantSlug ? (`/${user.tenantSlug}/dashboard` as Route) : "/";
 }
 
 export default async function LoginPage({
