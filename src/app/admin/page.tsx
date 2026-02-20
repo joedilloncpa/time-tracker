@@ -31,6 +31,33 @@ function safeHostFromConnectionString(value?: string) {
   }
 }
 
+function getSupabaseProjectRefFromAuthUrl(value?: string) {
+  if (!value) {
+    return "";
+  }
+  try {
+    const parsed = new URL(value);
+    const [projectRef] = parsed.hostname.split(".");
+    return projectRef ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function getSupabaseProjectRefFromDatabaseUrl(value?: string) {
+  if (!value) {
+    return "";
+  }
+  try {
+    const parsed = new URL(value);
+    const username = decodeURIComponent(parsed.username || "");
+    const parts = username.split(".");
+    return parts[parts.length - 1] || "";
+  } catch {
+    return "";
+  }
+}
+
 function toSlug(input: string) {
   return input
     .toLowerCase()
@@ -210,14 +237,43 @@ export default async function SuperAdminPage() {
       select: { id: true, slug: true, name: true }
     })
   ]);
-  const [chainbridgeClientCount, chainbridgeWorkstreamCount] = chainbridgeTenant
+  const [
+    chainbridgeClientCount,
+    chainbridgeWorkstreamCount,
+    chainbridgeVisibleClientCount,
+    chainbridgeVisibleWorkstreamCount,
+    sampleChainbridgeClients
+  ] = chainbridgeTenant
     ? await Promise.all([
         prisma.client.count({ where: { tenantId: chainbridgeTenant.id } }),
-        prisma.workstream.count({ where: { tenantId: chainbridgeTenant.id } })
+        prisma.workstream.count({ where: { tenantId: chainbridgeTenant.id } }),
+        prisma.client.count({
+          where: {
+            tenantId: chainbridgeTenant.id,
+            status: "active",
+            NOT: { code: "__FIRM_INTERNAL__" }
+          }
+        }),
+        prisma.workstream.count({
+          where: {
+            tenantId: chainbridgeTenant.id,
+            status: { not: "archived" },
+            client: { code: { not: "__FIRM_INTERNAL__" } }
+          }
+        }),
+        prisma.client.findMany({
+          where: { tenantId: chainbridgeTenant.id },
+          select: { id: true, name: true, status: true, code: true },
+          orderBy: { createdAt: "desc" },
+          take: 5
+        })
       ])
-    : [0, 0];
+    : [0, 0, 0, 0, []];
   const supabaseHost = safeHostFromUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
   const databaseHost = safeHostFromConnectionString(process.env.DATABASE_URL);
+  const authProjectRef = getSupabaseProjectRefFromAuthUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const dbProjectRef = getSupabaseProjectRefFromDatabaseUrl(process.env.DATABASE_URL);
+  const projectMismatch = Boolean(authProjectRef && dbProjectRef && authProjectRef !== dbProjectRef);
   const preferredFirm =
     firms.find((firm) => firm.slug === "chainbridge") ??
     firms.find((firm) => firm.id === user.tenantId) ??
@@ -250,11 +306,30 @@ export default async function SuperAdminPage() {
         <div className="grid gap-2 text-sm md:grid-cols-2">
           <p><span className="font-medium">Supabase Auth host:</span> {supabaseHost}</p>
           <p><span className="font-medium">Prisma DB host:</span> {databaseHost}</p>
+          <p><span className="font-medium">Supabase auth project ref:</span> {authProjectRef || "unknown"}</p>
+          <p><span className="font-medium">Prisma DB project ref:</span> {dbProjectRef || "unknown"}</p>
           <p><span className="font-medium">Chainbridge tenant:</span> {chainbridgeTenant ? `${chainbridgeTenant.name} (${chainbridgeTenant.id})` : "not found"}</p>
           <p><span className="font-medium">Current user tenantId:</span> {user.tenantId ?? "null"}</p>
           <p><span className="font-medium">Chainbridge clients in DB:</span> {chainbridgeClientCount}</p>
           <p><span className="font-medium">Chainbridge workstreams in DB:</span> {chainbridgeWorkstreamCount}</p>
+          <p><span className="font-medium">Chainbridge clients visible in Clients page filter:</span> {chainbridgeVisibleClientCount}</p>
+          <p><span className="font-medium">Chainbridge workstreams visible in Workstreams page filter:</span> {chainbridgeVisibleWorkstreamCount}</p>
         </div>
+        {projectMismatch ? (
+          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            Critical: auth and database project refs do not match. Update Vercel <code>DATABASE_URL</code> to the same Supabase project as <code>NEXT_PUBLIC_SUPABASE_URL</code>.
+          </p>
+        ) : null}
+        {sampleChainbridgeClients.length > 0 ? (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+            <p className="mb-2 font-medium">Latest Chainbridge clients (name / status / code):</p>
+            <ul className="space-y-1">
+              {sampleChainbridgeClients.map((client) => (
+                <li key={client.id}>{client.name} / {client.status} / {client.code ?? "-"}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </section>
       <section className="card space-y-3">
         <h2 className="text-lg font-semibold">Provision New Firm</h2>
