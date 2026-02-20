@@ -139,12 +139,34 @@ export async function getUserContext(firmSlug?: string): Promise<UserContext> {
     });
   }
 
+  let tenantId = dbUser.tenantId;
+  let tenantSlug = dbUser.tenant?.slug ?? null;
+  const role = parseRole(dbUser.role);
+
+  if (firmSlug) {
+    const tenant = await prisma.tenant.findUnique({
+      where: { slug: firmSlug },
+      select: { id: true, slug: true }
+    });
+
+    if (!tenant) {
+      throw new AuthError("unauthorized", "Firm not found");
+    }
+
+    if (role === "super_admin") {
+      tenantId = tenant.id;
+      tenantSlug = tenant.slug;
+    } else if (tenantId !== tenant.id) {
+      throw new AuthError("unauthorized", "Unauthorized firm access");
+    }
+  }
+
   return {
     id: dbUser.id,
     email: dbUser.email,
-    role: parseRole(dbUser.role),
-    tenantId: dbUser.tenantId,
-    tenantSlug: dbUser.tenant?.slug ?? null,
+    role,
+    tenantId,
+    tenantSlug,
     name: dbUser.name
   };
 }
