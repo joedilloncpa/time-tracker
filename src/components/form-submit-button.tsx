@@ -31,7 +31,7 @@ export function FormSubmitButton({
     if (wasPending) {
       setShowSuccess(true);
       setWasPending(false);
-      const timeout = setTimeout(() => setShowSuccess(false), 1600);
+      const timeout = setTimeout(() => setShowSuccess(false), 1000);
       return () => clearTimeout(timeout);
     }
   }, [pending, wasPending]);
