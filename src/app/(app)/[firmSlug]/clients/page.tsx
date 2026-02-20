@@ -119,7 +119,7 @@ async function createWorkstream(formData: FormData) {
     const allClients = await prisma.client.findMany({
       where: {
         tenantId,
-        NOT: { code: INTERNAL_FIRM_CLIENT_CODE }
+        OR: [{ code: null }, { code: { not: INTERNAL_FIRM_CLIENT_CODE } }]
       },
       select: { id: true }
     });
@@ -187,7 +187,7 @@ export default async function ClientsPage({
   const defaultClients = await prisma.client.findMany({
     where: {
       tenantId,
-      NOT: { code: INTERNAL_FIRM_CLIENT_CODE },
+      OR: [{ code: null }, { code: { not: INTERNAL_FIRM_CLIENT_CODE } }],
       ...(showInactiveClients ? {} : { status: "active" })
     },
     include: {
@@ -202,7 +202,7 @@ export default async function ClientsPage({
       ? await prisma.client.findMany({
           where: {
             tenantId,
-            NOT: { code: INTERNAL_FIRM_CLIENT_CODE }
+            OR: [{ code: null }, { code: { not: INTERNAL_FIRM_CLIENT_CODE } }]
           },
           include: {
             workstreams: {

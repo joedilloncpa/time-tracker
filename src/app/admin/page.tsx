@@ -251,14 +251,14 @@ export default async function SuperAdminPage() {
           where: {
             tenantId: chainbridgeTenant.id,
             status: "active",
-            NOT: { code: "__FIRM_INTERNAL__" }
+            OR: [{ code: null }, { code: { not: "__FIRM_INTERNAL__" } }]
           }
         }),
         prisma.workstream.count({
           where: {
             tenantId: chainbridgeTenant.id,
             status: { not: "archived" },
-            client: { code: { not: "__FIRM_INTERNAL__" } }
+            client: { OR: [{ code: null }, { code: { not: "__FIRM_INTERNAL__" } }] }
           }
         }),
         prisma.client.findMany({
