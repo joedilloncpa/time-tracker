@@ -127,9 +127,6 @@ async function updateWorkstreamGroup(formData: FormData) {
   const billingTypeRaw = String(formData.get("billingType") || "").trim();
   const statusRaw = String(formData.get("status") || "").trim();
   const rateRaw = String(formData.get("billingRate") || "").trim();
-  const includeArchived = String(formData.get("includeArchived") || "") === "1";
-  const selectedClientIds = String(formData.get("selectedClientIds") || "");
-
   if (!workstreamIds.length) {
     throw new Error("Workstream ids are required");
   }
@@ -163,15 +160,6 @@ async function updateWorkstreamGroup(formData: FormData) {
   });
 
   revalidatePath(`/${firmSlug}/workstreams`);
-  const query = new URLSearchParams();
-  if (includeArchived) {
-    query.set("includeArchived", "1");
-  }
-  if (selectedClientIds) {
-    query.set("clientIds", selectedClientIds);
-  }
-  const suffix = query.toString() ? `?${query.toString()}` : "";
-  redirect(`/${firmSlug}/workstreams${suffix}`);
 }
 
 async function updateSingleWorkstream(formData: FormData) {
@@ -183,9 +171,6 @@ async function updateSingleWorkstream(formData: FormData) {
   const workstreamId = String(formData.get("workstreamId") || "");
   const billingType = fromUiBillingType(String(formData.get("billingType") || "hourly")) ?? "hourly";
   const status = fromUiStatus(String(formData.get("status") || "active")) ?? "active";
-  const includeArchived = String(formData.get("includeArchived") || "") === "1";
-  const selectedClientIds = String(formData.get("selectedClientIds") || "");
-
   if (!workstreamId) {
     throw new Error("Workstream is required");
   }
@@ -200,15 +185,6 @@ async function updateSingleWorkstream(formData: FormData) {
   });
 
   revalidatePath(`/${firmSlug}/workstreams`);
-  const query = new URLSearchParams();
-  if (includeArchived) {
-    query.set("includeArchived", "1");
-  }
-  if (selectedClientIds) {
-    query.set("clientIds", selectedClientIds);
-  }
-  const suffix = query.toString() ? `?${query.toString()}` : "";
-  redirect(`/${firmSlug}/workstreams${suffix}`);
 }
 
 export default async function WorkstreamsPage({
