@@ -159,6 +159,10 @@ export default async function DashboardPage({
   const appliedClientIds = selectedClientIds.length
     ? selectedClientIds.filter((clientId) => visibleClientIds.has(clientId))
     : clients.map((client) => client.id);
+  const visibleEmployeeIds = new Set(employees.map((employee) => employee.id));
+  const appliedEmployeeIds = selectedEmployeeIds.length
+    ? selectedEmployeeIds.filter((employeeId) => visibleEmployeeIds.has(employeeId))
+    : [];
 
   const entries = showBillable || showNonBillable
     ? await prisma.timeEntry.findMany({
@@ -181,7 +185,7 @@ export default async function DashboardPage({
               : { isBillable: false }),
           ...(appliedClientIds.length ? { clientId: { in: appliedClientIds } } : { clientId: "" }),
           ...(isAdmin
-            ? (selectedEmployeeIds.length ? { userId: { in: selectedEmployeeIds } } : {})
+            ? (appliedEmployeeIds.length ? { userId: { in: appliedEmployeeIds } } : {})
             : { userId: user.id }),
         },
         include: {
@@ -251,7 +255,7 @@ export default async function DashboardPage({
   if (query.dateTo) exportParams.set("dateTo", query.dateTo);
   if (selectedClientIds.length) exportParams.set("clientIds", selectedClientIds.join(","));
   if (selectedWorkstreamIds.length) exportParams.set("workstreamIds", selectedWorkstreamIds.join(","));
-  if (isAdmin && selectedEmployeeIds.length) exportParams.set("employeeIds", selectedEmployeeIds.join(","));
+  if (isAdmin && appliedEmployeeIds.length) exportParams.set("employeeIds", appliedEmployeeIds.join(","));
   if (includeInactive) exportParams.set("includeInactive", "1");
   if (!showBillable) exportParams.set("billable", "0");
   if (!showNonBillable) exportParams.set("nonBillable", "0");
