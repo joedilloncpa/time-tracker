@@ -177,6 +177,18 @@ export default async function DashboardPage({
     distinct: ["userId"]
   });
   const entryUserIds = entryUsers.map((row) => row.userId).filter(Boolean);
+  const entryUserProfiles = entryUserIds.length
+    ? await prisma.user.findMany({
+        where: {
+          id: { in: entryUserIds }
+        },
+        select: {
+          id: true,
+          name: true,
+          tenantId: true
+        }
+      })
+    : [];
   const employees = await prisma.user.findMany({
     where: {
       tenantId: user.tenantId ?? "",
@@ -201,6 +213,21 @@ export default async function DashboardPage({
     groupedEmployees.set(key, {
       label: employee.name.replace(/\s+/g, " ").trim(),
       memberIds: [employee.id]
+    });
+  }
+  for (const entryUser of entryUserProfiles) {
+    const key = normalizePersonName(entryUser.name);
+    const existing = groupedEmployees.get(key);
+    if (existing) {
+      if (!existing.memberIds.includes(entryUser.id)) {
+        existing.memberIds.push(entryUser.id);
+      }
+      continue;
+    }
+
+    groupedEmployees.set(key, {
+      label: entryUser.name.replace(/\s+/g, " ").trim(),
+      memberIds: [entryUser.id]
     });
   }
   const employeeFilterOptions = [...groupedEmployees.values()]
