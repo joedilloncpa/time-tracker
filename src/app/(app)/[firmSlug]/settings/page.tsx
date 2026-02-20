@@ -72,6 +72,11 @@ async function changePassword(formData: FormData) {
   }
 
   const cookieStore = await cookies();
+  type CookieToSet = {
+    name: string;
+    value: string;
+    options?: Parameters<typeof cookieStore.set>[2];
+  };
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -80,7 +85,7 @@ async function changePassword(formData: FormData) {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookieValues) {
+        setAll(cookieValues: CookieToSet[]) {
           cookieValues.forEach(({ name, value, options }) => {
             cookieStore.set(name, value, options);
           });
