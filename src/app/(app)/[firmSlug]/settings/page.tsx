@@ -2,6 +2,7 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { UserRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getUserContext } from "@/lib/auth";
@@ -117,6 +118,10 @@ async function inviteUser(formData: FormData) {
     throw new Error("Email is required");
   }
 
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("Supabase invite is not configured. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
+  }
+
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing && existing.tenantId && existing.tenantId !== user.tenantId) {
     throw new Error("This email already belongs to another firm");
@@ -141,6 +146,22 @@ async function inviteUser(formData: FormData) {
         role
       }
     });
+  }
+
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+
+  const redirectTo = process.env.NEXT_PUBLIC_APP_URL
+    ? `${process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/auth/callback`
+    : undefined;
+  const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+    ...(redirectTo ? { redirectTo } : {})
+  });
+
+  if (error) {
+    throw new Error(error.message || "Unable to send invite email");
   }
 
   revalidatePath(`/${firmSlug}/settings`);

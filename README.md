@@ -73,5 +73,6 @@ npm run dev
 ## Notes
 
 - `AUTH_MODE=dev` uses seeded users for local dev without OAuth setup.
+- User invites from settings require `SUPABASE_SERVICE_ROLE_KEY` so invited users can receive first-time auth emails.
 - In production, configure Supabase Auth, set JWT claims for `tenant_id` and `role`, and apply RLS policies.
 - Stripe Customer Portal and full subscription lifecycle endpoints are not yet wired in this MVP.
