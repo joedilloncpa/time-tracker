@@ -12,9 +12,20 @@ function normalizeNextPath(nextPath: string | null) {
 export async function GET(request: NextRequest) {
   const nextPath = normalizeNextPath(request.nextUrl.searchParams.get("next"));
   const code = request.nextUrl.searchParams.get("code");
+  const oauthError = request.nextUrl.searchParams.get("error");
+  const oauthErrorDescription = request.nextUrl.searchParams.get("error_description");
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  if (oauthError) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("error", "oauth_error");
+    if (oauthErrorDescription) {
+      loginUrl.searchParams.set("message", oauthErrorDescription);
+    }
+    return NextResponse.redirect(loginUrl);
   }
 
   if (code) {
@@ -41,7 +52,13 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("error", "oauth_exchange_failed");
+      loginUrl.searchParams.set("message", error.message || "Unable to complete Google sign in");
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   return NextResponse.redirect(new URL(nextPath, request.url));

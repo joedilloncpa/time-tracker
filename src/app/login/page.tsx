@@ -20,7 +20,7 @@ function getDefaultRedirect(user: Awaited<ReturnType<typeof getUserContext>>): R
 export default async function LoginPage({
   searchParams
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; message?: string }>;
 }) {
   if (process.env.AUTH_MODE === "dev") {
     redirect("/northstar-accounting/dashboard");
@@ -41,6 +41,10 @@ export default async function LoginPage({
   const errorMessage =
     params.error === "not_provisioned"
       ? "Your account exists in auth, but has not been provisioned in Tally yet. Ask your firm admin to invite you."
+      : params.error === "oauth_exchange_failed"
+        ? (params.message || "Google sign in could not be completed. Please try again.")
+        : params.error === "oauth_error"
+          ? (params.message || "Google sign in was canceled or failed. Please try again.")
       : null;
 
   return (
