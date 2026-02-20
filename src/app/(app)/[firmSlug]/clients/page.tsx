@@ -8,6 +8,15 @@ import { ExcelFilterField } from "@/components/excel-filter-field";
 import { INTERNAL_FIRM_CLIENT_CODE } from "@/lib/firm-work";
 import { assertTenantBySlug } from "@/lib/tenant";
 
+function parseClientStatus(value: FormDataEntryValue | null): ClientStatus {
+  const normalized = String(value ?? "").trim();
+  if (normalized === "inactive") {
+    return "inactive";
+  }
+  // Treat missing/invalid/prospect as active for default behavior.
+  return "active";
+}
+
 async function resolveTenantContext(firmSlug: string) {
   const [user, tenant] = await Promise.all([
     getUserContext(firmSlug),
@@ -35,7 +44,7 @@ async function createClient(formData: FormData) {
       contactEmail: String(formData.get("contactEmail") || "").trim() || null,
       phone: String(formData.get("phone") || "").trim() || null,
       industry: String(formData.get("industry") || "").trim() || null,
-      status: (String(formData.get("status") || "active") as ClientStatus) ?? "active",
+      status: parseClientStatus(formData.get("status")),
       tags: String(formData.get("tags") || "")
         .split(",")
         .map((t) => t.trim())
@@ -75,7 +84,7 @@ async function updateClient(formData: FormData) {
       budgetHours: formData.get("budgetHours") ? Number(formData.get("budgetHours")) : null,
       budgetAmount: formData.get("budgetAmount") ? Number(formData.get("budgetAmount")) : null,
       qboXeroLink: String(formData.get("qboXeroLink") || "").trim() || null,
-      status: formData.get("isInactive") ? "inactive" : (String(formData.get("status") || "active") as ClientStatus),
+      status: formData.get("isInactive") ? "inactive" : parseClientStatus(formData.get("status")),
       tags: String(formData.get("tags") || "")
         .split(",")
         .map((t) => t.trim())
@@ -179,7 +188,7 @@ export default async function ClientsPage({
     where: {
       tenantId,
       NOT: { code: INTERNAL_FIRM_CLIENT_CODE },
-      ...(showInactiveClients ? {} : { status: { in: ["active", "prospect"] } })
+      ...(showInactiveClients ? {} : { status: "active" })
     },
     include: {
       workstreams: {
@@ -246,7 +255,6 @@ export default async function ClientsPage({
                     <select className="input" defaultValue={client.status} name="status">
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
-                      <option value="prospect">Prospect</option>
                     </select>
                     <input className="input" defaultValue={client.budgetHours?.toString() ?? ""} name="budgetHours" placeholder="Budget hours" step="0.01" type="number" />
                     <input className="input" defaultValue={client.budgetAmount?.toString() ?? ""} name="budgetAmount" placeholder="Budget amount" step="0.01" type="number" />
