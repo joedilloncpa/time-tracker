@@ -179,7 +179,7 @@ export default async function ClientsPage({
     where: {
       tenantId,
       NOT: { code: INTERNAL_FIRM_CLIENT_CODE },
-      ...(showInactiveClients ? {} : { status: "active" })
+      ...(showInactiveClients ? {} : { status: { in: ["active", "prospect"] } })
     },
     include: {
       workstreams: {

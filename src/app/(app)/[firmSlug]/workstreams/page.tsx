@@ -155,7 +155,7 @@ export default async function WorkstreamsPage({
           not: INTERNAL_FIRM_CLIENT_CODE
         }
       },
-      ...(includeArchived ? {} : { status: "active" }),
+      ...(includeArchived ? {} : { status: { not: "archived" } }),
       ...(selectedClientIds.length ? { clientId: { in: selectedClientIds } } : {})
     },
     include: {
