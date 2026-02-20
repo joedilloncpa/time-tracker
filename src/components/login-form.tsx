@@ -17,13 +17,15 @@ export function LoginForm({ nextPath, oauthCode }: { nextPath: string; oauthCode
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [oauthHandled, setOauthHandled] = useState(false);
 
   useEffect(() => {
     async function completeOAuth() {
-      if (!oauthCode || !supabase) {
+      if (!oauthCode || !supabase || oauthHandled) {
         return;
       }
 
+      setOauthHandled(true);
       setLoading(true);
       setError("");
       const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(oauthCode);
@@ -34,11 +36,11 @@ export function LoginForm({ nextPath, oauthCode }: { nextPath: string; oauthCode
         return;
       }
 
-      window.location.assign(safeNextPath);
+      window.location.replace(safeNextPath);
     }
 
     void completeOAuth();
-  }, [oauthCode, safeNextPath, supabase]);
+  }, [oauthCode, oauthHandled, safeNextPath, supabase]);
 
   async function onPasswordSignIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

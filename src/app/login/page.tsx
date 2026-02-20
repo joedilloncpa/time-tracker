@@ -20,7 +20,7 @@ function getDefaultRedirect(user: Awaited<ReturnType<typeof getUserContext>>): R
 export default async function LoginPage({
   searchParams
 }: {
-  searchParams: Promise<{ next?: string; error?: string; message?: string; oauth_code?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; message?: string; oauth_code?: string; code?: string }>;
 }) {
   if (process.env.AUTH_MODE === "dev") {
     redirect("/northstar-accounting/dashboard");
@@ -51,7 +51,7 @@ export default async function LoginPage({
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-md space-y-3">
         {errorMessage ? <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{errorMessage}</p> : null}
-        <LoginForm nextPath={nextPath} oauthCode={params.oauth_code ?? ""} />
+        <LoginForm nextPath={nextPath} oauthCode={params.oauth_code ?? params.code ?? ""} />
       </div>
     </main>
   );
