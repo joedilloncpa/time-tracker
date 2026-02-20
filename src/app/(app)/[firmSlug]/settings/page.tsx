@@ -25,6 +25,14 @@ type SettingsParams = {
   inviteSuccess?: string;
 };
 
+function isRedirectControlError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  const digest = (error as Error & { digest?: string }).digest;
+  return error.message === "NEXT_REDIRECT" || (typeof digest === "string" && digest.startsWith("NEXT_REDIRECT"));
+}
+
 function parseDecimal(value: FormDataEntryValue | null) {
   if (value == null || String(value).trim() === "") {
     return null;
@@ -179,6 +187,9 @@ async function inviteUser(formData: FormData) {
     revalidatePath(`/${firmSlug}/settings`);
     redirect(`${redirectBase}&inviteSuccess=1`);
   } catch (error) {
+    if (isRedirectControlError(error)) {
+      throw error;
+    }
     const message = error instanceof Error ? error.message : "Unable to send invite email";
     redirectWithError(message);
   }
