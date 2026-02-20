@@ -49,6 +49,9 @@ export default async function LoginPage({
 
   try {
     const user = await getUserContext();
+    if (nextPath !== "/") {
+      redirect(nextPath as Route);
+    }
     redirect(await getDefaultRedirect(user));
   } catch (error) {
     if (!isAuthError(error, ["unauthorized", "not_provisioned"])) {
