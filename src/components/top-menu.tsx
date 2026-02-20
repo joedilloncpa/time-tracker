@@ -38,7 +38,8 @@ function IconCog() {
 
 const navItems = [
   { href: "dashboard", label: "Dashboard" },
-  { href: "clients", label: "Clients" }
+  { href: "clients", label: "Clients" },
+  { href: "workstreams", label: "Workstreams" }
 ];
 
 export function TopMenu({
