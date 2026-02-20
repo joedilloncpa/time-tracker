@@ -262,6 +262,7 @@ export function TopMenu({
             <UserMenu
               name={user.name}
               role={user.role}
+              adminHref={user.isSuperAdmin ? "/admin" : undefined}
               settingsHref={`/${firmSlug}/settings`}
             />
           </div>

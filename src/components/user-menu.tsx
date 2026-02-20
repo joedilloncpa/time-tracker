@@ -14,11 +14,13 @@ function getInitials(name: string) {
 export function UserMenu({
   name,
   role,
-  settingsHref
+  settingsHref,
+  adminHref
 }: {
   name: string;
   role?: string;
   settingsHref?: string;
+  adminHref?: string;
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -63,6 +65,11 @@ export function UserMenu({
             {role ? <p className="text-xs text-slate-500">{role}</p> : null}
           </div>
           <div className="mt-1 flex flex-col">
+            {adminHref ? (
+              <Link className="rounded-lg px-2 py-2 text-sm text-slate-700 hover:bg-slate-50" href={adminHref}>
+                Platform Admin
+              </Link>
+            ) : null}
             {settingsHref ? (
               <Link className="rounded-lg px-2 py-2 text-sm text-slate-700 hover:bg-slate-50" href={settingsHref}>
                 Settings

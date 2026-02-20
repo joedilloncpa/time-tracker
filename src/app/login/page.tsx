@@ -11,7 +11,7 @@ function normalizeNextPath(nextPath: string | undefined) {
 }
 
 function getDefaultRedirect(user: Awaited<ReturnType<typeof getUserContext>>): Route {
-  if (user.role === "super_admin") {
+  if (user.isSuperAdmin) {
     return "/admin";
   }
   return user.tenantSlug ? (`/${user.tenantSlug}/dashboard` as Route) : "/";

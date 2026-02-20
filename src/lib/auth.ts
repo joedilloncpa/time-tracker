@@ -43,7 +43,9 @@ async function getDevContext(firmSlug?: string): Promise<UserContext> {
       return {
         id: superAdmin.id,
         email: superAdmin.email,
+        authRole: superAdmin.role,
         role: superAdmin.role,
+        isSuperAdmin: true,
         tenantId: superAdmin.tenantId,
         tenantSlug: null,
         name: superAdmin.name
@@ -75,7 +77,9 @@ async function getDevContext(firmSlug?: string): Promise<UserContext> {
   return {
     id: firstUser.id,
     email: firstUser.email,
+    authRole: firstUser.role,
     role: firstUser.role,
+    isSuperAdmin: firstUser.role === "super_admin",
     tenantId: tenant.id,
     tenantSlug: tenant.slug,
     name: firstUser.name
@@ -141,7 +145,8 @@ export async function getUserContext(firmSlug?: string): Promise<UserContext> {
 
   let tenantId = dbUser.tenantId;
   let tenantSlug = dbUser.tenant?.slug ?? null;
-  const role = parseRole(dbUser.role);
+  const authRole = parseRole(dbUser.role);
+  let role = authRole;
 
   if (firmSlug) {
     const tenant = await prisma.tenant.findUnique({
@@ -153,9 +158,11 @@ export async function getUserContext(firmSlug?: string): Promise<UserContext> {
       throw new AuthError("unauthorized", "Firm not found");
     }
 
-    if (role === "super_admin") {
+    if (authRole === "super_admin") {
       tenantId = tenant.id;
       tenantSlug = tenant.slug;
+      // Inside a firm route, super admins should function like firm admins.
+      role = "firm_admin";
     } else if (tenantId !== tenant.id) {
       throw new AuthError("unauthorized", "Unauthorized firm access");
     }
@@ -164,7 +171,9 @@ export async function getUserContext(firmSlug?: string): Promise<UserContext> {
   return {
     id: dbUser.id,
     email: dbUser.email,
+    authRole,
     role,
+    isSuperAdmin: authRole === "super_admin",
     tenantId,
     tenantSlug,
     name: dbUser.name

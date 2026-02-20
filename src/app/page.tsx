@@ -8,7 +8,7 @@ export default async function HomePage() {
 
   try {
     const user = await getUserContext();
-    if (user.role === "super_admin") {
+    if (user.isSuperAdmin) {
       redirect("/admin");
     }
     if (user.tenantSlug) {
