@@ -6,6 +6,10 @@ export async function getApiContextFromSearchParams(searchParams: URLSearchParam
   const firmSlug = searchParams.get("firmSlug") || undefined;
   const user = await getUserContext(firmSlug);
 
+  if (user.role === "super_admin" && !firmSlug) {
+    throw new Error("firmSlug is required for super admin API requests");
+  }
+
   if (user.tenantId) {
     const tenant = await prisma.tenant.findUnique({
       where: { id: user.tenantId },
@@ -19,6 +23,10 @@ export async function getApiContextFromSearchParams(searchParams: URLSearchParam
     ) {
       throw new Error("Subscription inactive");
     }
+  }
+
+  if (!user.tenantId) {
+    throw new Error("Missing tenant context");
   }
 
   return { user, firmSlug };
