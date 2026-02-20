@@ -9,6 +9,28 @@ import { ensureFirmWorkArea } from "@/lib/firm-work";
 import { UserContext } from "@/lib/types";
 import { UserMenu } from "@/components/user-menu";
 
+function safeHostFromUrl(value?: string) {
+  if (!value) {
+    return "not set";
+  }
+  try {
+    return new URL(value).host;
+  } catch {
+    return "invalid";
+  }
+}
+
+function safeHostFromConnectionString(value?: string) {
+  if (!value) {
+    return "not set";
+  }
+  try {
+    return new URL(value).host;
+  } catch {
+    return "invalid";
+  }
+}
+
 function toSlug(input: string) {
   return input
     .toLowerCase()
@@ -148,7 +170,7 @@ export default async function SuperAdminPage() {
   }
   ensureRole(user, ["super_admin"]);
 
-  const [firmCount, userCount, activeSubs, firms, firmUsers] = await Promise.all([
+  const [firmCount, userCount, activeSubs, firms, firmUsers, chainbridgeTenant] = await Promise.all([
     prisma.tenant.count(),
     prisma.user.count({ where: { role: { not: "super_admin" } } }),
     prisma.tenant.count({ where: { subscriptionStatus: "active" } }),
@@ -182,8 +204,20 @@ export default async function SuperAdminPage() {
         { tenantId: "asc" },
         { createdAt: "asc" }
       ]
+    }),
+    prisma.tenant.findUnique({
+      where: { slug: "chainbridge" },
+      select: { id: true, slug: true, name: true }
     })
   ]);
+  const [chainbridgeClientCount, chainbridgeWorkstreamCount] = chainbridgeTenant
+    ? await Promise.all([
+        prisma.client.count({ where: { tenantId: chainbridgeTenant.id } }),
+        prisma.workstream.count({ where: { tenantId: chainbridgeTenant.id } })
+      ])
+    : [0, 0];
+  const supabaseHost = safeHostFromUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const databaseHost = safeHostFromConnectionString(process.env.DATABASE_URL);
   const preferredFirm =
     firms.find((firm) => firm.slug === "chainbridge") ??
     firms.find((firm) => firm.id === user.tenantId) ??
@@ -207,6 +241,20 @@ export default async function SuperAdminPage() {
         <div className="card"><p className="text-sm text-slate-500">Firms</p><p className="text-3xl font-semibold">{firmCount}</p></div>
         <div className="card"><p className="text-sm text-slate-500">Users</p><p className="text-3xl font-semibold">{userCount}</p></div>
         <div className="card"><p className="text-sm text-slate-500">Active Subs</p><p className="text-3xl font-semibold">{activeSubs}</p></div>
+      </section>
+      <section className="card space-y-2">
+        <h2 className="text-lg font-semibold">Data Source Diagnostics</h2>
+        <p className="text-sm text-slate-600">
+          App business data comes from <code>DATABASE_URL</code> (Prisma). Auth comes from <code>NEXT_PUBLIC_SUPABASE_URL</code>.
+        </p>
+        <div className="grid gap-2 text-sm md:grid-cols-2">
+          <p><span className="font-medium">Supabase Auth host:</span> {supabaseHost}</p>
+          <p><span className="font-medium">Prisma DB host:</span> {databaseHost}</p>
+          <p><span className="font-medium">Chainbridge tenant:</span> {chainbridgeTenant ? `${chainbridgeTenant.name} (${chainbridgeTenant.id})` : "not found"}</p>
+          <p><span className="font-medium">Current user tenantId:</span> {user.tenantId ?? "null"}</p>
+          <p><span className="font-medium">Chainbridge clients in DB:</span> {chainbridgeClientCount}</p>
+          <p><span className="font-medium">Chainbridge workstreams in DB:</span> {chainbridgeWorkstreamCount}</p>
+        </div>
       </section>
       <section className="card space-y-3">
         <h2 className="text-lg font-semibold">Provision New Firm</h2>
