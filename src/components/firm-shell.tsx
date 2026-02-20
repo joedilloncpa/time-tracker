@@ -1,0 +1,31 @@
+import { UserContext } from "@/lib/types";
+import { TopMenu } from "@/components/top-menu";
+
+export function FirmShell({
+  firmSlug,
+  user,
+  timerClients,
+  children
+}: {
+  firmSlug: string;
+  user: UserContext;
+  timerClients: Array<{
+    id: string;
+    name: string;
+    code?: string | null;
+    workstreams: Array<{
+      id: string;
+      name: string;
+    }>;
+  }>;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-h-screen bg-[#f7f4ef]">
+      <TopMenu firmSlug={firmSlug} timerClients={timerClients} user={user} />
+      <div className="cb-shell px-0 py-4">
+        <section>{children}</section>
+      </div>
+    </div>
+  );
+}

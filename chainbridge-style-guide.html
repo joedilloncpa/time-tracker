@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chainbridge — Design System & Style Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ══════════════════════════════════════════════════════════════
+   CHAINBRIDGE DESIGN TOKENS
+   Extracted from chainbridgeaccounting.com screenshots
+══════════════════════════════════════════════════════════════ */
+:root {
+  /* ── Brand Accent ── */
+  --orange-50:  #fdf3ed;
+  --orange-100: #fbe0cc;
+  --orange-200: #f7be99;
+  --orange-300: #f19a67;
+  --orange-400: #e8763a;
+  --orange-500: #c4531a;   /* Primary accent — section labels, highlights */
+  --orange-600: #a8421200; /* Not used directly */
+  --orange-cta: #c4531a;   /* CTA button fill */
+  --orange-cta-hover: #b04a16;
+
+  /* ── Forest Green ── */
+  --green-900:  #142a1c;   /* Deepest — "Grow With Us" section bg */
+  --green-800:  #1c3a28;   /* Primary dark green — nav active, secondary btn */
+  --green-700:  #24482f;
+  --green-600:  #2d5a3a;
+  --green-text: #1a2e1f;   /* Dark green for headings on cream bg */
+
+  /* ── Near-Black ── */
+  --dark-900: #141412;    /* Deepest bg — outcomes section */
+  --dark-800: #1c1c19;    /* Section bg */
+  --dark-700: #252521;    /* Card surface on dark */
+  --dark-600: #2e2e2a;    /* Card hover on dark */
+  --dark-500: #3a3a35;    /* Borders on dark */
+
+  /* ── Cream / Light ── */
+  --cream-50:  #f7f4ef;   /* Hero bg */
+  --cream-100: #ede9e1;   /* Slightly darker cream */
+  --cream-200: #ddd9d0;   /* Borders on light */
+  --cream-text: #4a4a42; /* Body text on cream */
+  --cream-muted: #7a7a70; /* Secondary text on cream */
+
+  /* ── White ── */
+  --white: #ffffff;
+  --white-90: rgba(255,255,255,0.9);
+  --white-60: rgba(255,255,255,0.6);
+  --white-30: rgba(255,255,255,0.3);
+  --white-10: rgba(255,255,255,0.1);
+
+  /* ── Semantic / Status ── */
+  --color-success: #2d6a4f;
+  --color-success-light: #d8f3dc;
+  --color-warning: #d4a017;
+  --color-warning-light: #fef9e7;
+  --color-danger:  #c0392b;
+  --color-danger-light: #fde8e6;
+  --color-info:    #2471a3;
+  --color-info-light: #e8f4fd;
+
+  /* ── Billing Type Colors ── */
+  --color-hourly:   #7b68ee;
+  --color-fixed:    #2ecc71;
+  --color-retainer: var(--orange-500);
+
+  /* ── Typography ── */
+  --font-display: 'DM Serif Display', 'Georgia', serif;
+  --font-sans:    'DM Sans', -apple-system, sans-serif;
+  --font-mono:    'DM Mono', 'Fira Code', monospace;
+
+  /* ── Type Scale ── */
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+  --text-3xl:  1.875rem;
+  --text-4xl:  2.25rem;
+  --text-5xl:  3rem;
+
+  /* ── Font Weights ── */
+  --fw-light:    300;
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  /* ── Spacing (4px base) ── */
+  --sp-1:  0.25rem;
+  --sp-2:  0.5rem;
+  --sp-3:  0.75rem;
+  --sp-4:  1rem;
+  --sp-5:  1.25rem;
+  --sp-6:  1.5rem;
+  --sp-8:  2rem;
+  --sp-10: 2.5rem;
+  --sp-12: 3rem;
+  --sp-16: 4rem;
+  --sp-20: 5rem;
+
+  /* ── Border Radius ── */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  24px;
+  --radius-full: 9999px;
+
+  /* ── Shadows ── */
+  --shadow-sm:   0 1px 3px rgba(20,18,12,0.08);
+  --shadow-md:   0 4px 16px rgba(20,18,12,0.12);
+  --shadow-lg:   0 8px 32px rgba(20,18,12,0.16);
+  --shadow-dark: 0 4px 20px rgba(0,0,0,0.4);
+
+  /* ── Transitions ── */
+  --ease-fast: 120ms ease;
+  --ease-base: 200ms ease;
+  --ease-slow: 350ms ease;
+
+  /* ── App Layout ── */
+  --sidebar-w: 240px;
+  --topbar-h:  60px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-sans);
+  background: var(--cream-50);
+  color: var(--green-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   STYLE GUIDE CHROME
+══════════════════════════════════════════════════════════════ */
+.sg-nav {
+  position: sticky;
+  top: 0;
+  background: var(--green-800);
+  z-index: 100;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.sg-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--white);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-semibold);
+}
+.sg-nav-logo {
+  width: 26px;
+  height: 26px;
+  background: var(--orange-500);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.5px;
+}
+.sg-nav-links {
+  display: flex;
+  gap: 2px;
+}
+.sg-nav-link {
+  font-size: 12px;
+  color: var(--white-60);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color var(--ease-fast), background var(--ease-fast);
+}
+.sg-nav-link:hover { color: var(--white); background: var(--white-10); }
+
+.sg-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 60px 40px 120px;
+}
+
+/* HEADER */
+.sg-header {
+  margin-bottom: 80px;
+  padding-bottom: 60px;
+  border-bottom: 1px solid var(--cream-200);
+}
+.sg-eyebrow {
+  font-size: var(--text-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--orange-500);
+  margin-bottom: 16px;
+}
+.sg-title {
+  font-family: var(--font-display);
+  font-size: 56px;
+  color: var(--green-text);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 20px;
+}
+.sg-title em {
+  font-style: italic;
+  color: var(--orange-500);
+}
+.sg-subtitle {
+  font-size: var(--text-lg);
+  color: var(--cream-text);
+  max-width: 540px;
+  line-height: 1.6;
+}
+.sg-meta {
+  display: flex;
+  gap: 24px;
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 1px solid var(--cream-200);
+  flex-wrap: wrap;
+}
+.sg-meta-item { font-size: var(--text-xs); color: var(--cream-muted); }
+.sg-meta-item strong { color: var(--green-text); font-weight: var(--fw-semibold); margin-right: 4px; }
+
+/* SECTIONS */
+.sg-section { margin-bottom: 80px; }
+.sg-section-header { margin-bottom: 36px; }
+.section-eyebrow {
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--orange-500);
+  margin-bottom: 8px;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  color: var(--green-text);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+.section-desc {
+  font-size: var(--text-sm);
+  color: var(--cream-text);
+  max-width: 600px;
+  line-height: 1.7;
+}
+.sg-divider {
+  height: 1px;
+  background: var(--cream-200);
+  margin-bottom: 80px;
+}
+
+/* GROUP LABEL */
+.group-label {
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cream-muted);
+  margin-bottom: 16px;
+  margin-top: 32px;
+}
+.group-label:first-child { margin-top: 0; }
+
+/* ══════════════════════════════════════════════════════════════
+   COLOR PALETTE
+══════════════════════════════════════════════════════════════ */
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 14px;
+}
+.color-card {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--cream-200);
+  background: white;
+  box-shadow: var(--shadow-sm);
+}
+.color-swatch { height: 72px; position: relative; }
+.swatch-tag {
+  position: absolute;
+  bottom: 6px; right: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  background: rgba(0,0,0,0.35);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+.color-info { padding: 10px 12px; }
+.color-name { font-size: var(--text-sm); font-weight: var(--fw-semibold); color: var(--green-text); }
+.color-hex  { font-size: 11px; font-family: var(--font-mono); color: var(--cream-muted); margin-top: 1px; }
+.color-role { font-size: 11px; color: var(--cream-muted); margin-top: 3px; font-style: italic; }
+
+/* ══════════════════════════════════════════════════════════════
+   TYPOGRAPHY
+══════════════════════════════════════════════════════════════ */
+.font-block {
+  background: white;
+  border: 1px solid var(--cream-200);
+  border-radius: var(--radius-xl);
+  padding: 28px 32px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.font-tag {
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--orange-500);
+  margin-bottom: 14px;
+}
+.font-specimen-display {
+  font-family: var(--font-display);
+  font-size: 36px;
+  color: var(--green-text);
+  line-height: 1.2;
+  margin-bottom: 10px;
+}
+.font-specimen-sans {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  color: var(--green-text);
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+.font-specimen-mono {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  color: var(--green-text);
+}
+.font-weights {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--cream-200);
+}
+.fw-samp { font-size: var(--text-sm); color: var(--cream-text); }
+
+.type-table { width: 100%; border-collapse: collapse; }
+.type-table tr { border-bottom: 1px solid var(--cream-200); }
+.type-table tr:last-child { border-bottom: none; }
+.type-table td { padding: 14px 0; vertical-align: middle; }
+.type-meta { width: 130px; font-size: 11px; font-family: var(--font-mono); color: var(--cream-muted); }
+.type-meta strong { display: block; color: var(--green-text); font-weight: 500; margin-bottom: 2px; font-family: var(--font-mono); }
+.type-use { width: 180px; text-align: right; font-size: 11px; color: var(--cream-muted); font-style: italic; }
+
+/* ══════════════════════════════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════════════════════════════ */
+.btn-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 20px; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-weight: var(--fw-semibold);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-lg);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--ease-base);
+  padding: 10px 20px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.btn-primary {
+  background: var(--orange-cta);
+  color: white;
+  border-color: var(--orange-cta);
+}
+.btn-primary:hover {
+  background: var(--orange-cta-hover);
+  border-color: var(--orange-cta-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(196,83,26,0.35);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--green-800);
+  border-color: var(--green-800);
+}
+.btn-secondary:hover {
+  background: var(--green-800);
+  color: white;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--cream-text);
+  border-color: transparent;
+}
+.btn-ghost:hover {
+  background: var(--cream-100);
+  color: var(--green-text);
+}
+
+/* Dark surface variants */
+.btn-primary-dark {
+  background: var(--orange-cta);
+  color: white;
+  border-color: var(--orange-cta);
+}
+.btn-ghost-dark {
+  background: transparent;
+  color: var(--white-60);
+  border-color: var(--white-30);
+}
+.btn-ghost-dark:hover {
+  background: var(--white-10);
+  color: white;
+  border-color: var(--white-60);
+}
+
+.btn-sm { padding: 6px 14px; font-size: var(--text-xs); border-radius: var(--radius-md); }
+.btn-lg { padding: 14px 28px; font-size: var(--text-base); }
+
+.btn-surface-wrap {
+  background: var(--dark-800);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.surface-label {
+  width: 100%;
+  font-size: 11px;
+  color: var(--white-30);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: -4px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BADGES
+══════════════════════════════════════════════════════════════ */
+.badge-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.02em;
+  border: 1px solid;
+}
+.badge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+.badge-success { background: #d8f3dc; color: #1b4332; border-color: #95d5a8; }
+.badge-warning { background: #fef3cd; color: #7d4e00; border-color: #f8d875; }
+.badge-danger  { background: #fde8e6; color: #922b21; border-color: #f5aca7; }
+.badge-info    { background: #d6eaf8; color: #1a5276; border-color: #85c1e9; }
+.badge-neutral { background: var(--cream-100); color: var(--cream-text); border-color: var(--cream-200); }
+.badge-orange  { background: #fdf3ed; color: var(--orange-500); border-color: #f7be99; }
+
+.badge-hourly   { background: #ede7ff; color: #4527a0; border-color: #b39ddb; }
+.badge-fixed    { background: #d9f7e8; color: #1a6b3a; border-color: #6dd49e; }
+.badge-retainer { background: #fdf3ed; color: var(--orange-500); border-color: #f7be99; }
+
+/* ══════════════════════════════════════════════════════════════
+   FORM INPUTS
+══════════════════════════════════════════════════════════════ */
+.input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 20px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-label { font-size: var(--text-xs); font-weight: var(--fw-semibold); color: var(--green-text); letter-spacing: 0.02em; }
+.form-label .req { color: var(--orange-500); margin-left: 2px; }
+
+.input {
+  background: white;
+  border: 1.5px solid var(--cream-200);
+  border-radius: var(--radius-md);
+  padding: 9px 12px;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--green-text);
+  outline: none;
+  width: 100%;
+  transition: border-color var(--ease-fast), box-shadow var(--ease-fast);
+  box-shadow: var(--shadow-sm);
+}
+.input::placeholder { color: var(--cream-muted); }
+.input:focus {
+  border-color: var(--green-800);
+  box-shadow: 0 0 0 3px rgba(28,58,40,0.12);
+}
+.input.error { border-color: var(--color-danger); }
+.input.error:focus { box-shadow: 0 0 0 3px rgba(192,57,43,0.15); }
+.input:disabled { opacity: 0.55; cursor: not-allowed; background: var(--cream-100); }
+
+.form-hint  { font-size: 11px; color: var(--cream-muted); }
+.form-error { font-size: 11px; color: var(--color-danger); }
+
+.input-with-icon { position: relative; }
+.input-with-icon .input { padding-left: 34px; }
+.input-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--cream-muted); font-size: 14px; pointer-events: none; }
+
+select.input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a7a70' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+  cursor: pointer;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CARDS
+══════════════════════════════════════════════════════════════ */
+/* Light surface card */
+.card {
+  background: white;
+  border: 1px solid var(--cream-200);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--ease-base), transform var(--ease-base);
+}
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.card-accent-top { border-top: 3px solid var(--orange-500); }
+
+/* Dark surface card (like outcomes section) */
+.card-dark {
+  background: var(--dark-700);
+  border: 1px solid var(--dark-500);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  transition: background var(--ease-base);
+}
+.card-dark:hover { background: var(--dark-600); }
+
+/* Green surface card */
+.card-green {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+}
+
+.card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  background: rgba(196,83,26,0.2);
+  color: var(--orange-400);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+.card-title { font-size: var(--text-base); font-weight: var(--fw-bold); color: white; margin-bottom: 8px; }
+.card-body  { font-size: var(--text-sm); color: var(--white-60); line-height: 1.6; }
+
+/* Stat card */
+.stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+.stat-card {
+  background: white;
+  border: 1px solid var(--cream-200);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.stat-label { font-size: var(--text-xs); color: var(--cream-muted); letter-spacing: 0.04em; text-transform: uppercase; font-weight: var(--fw-semibold); margin-bottom: 8px; }
+.stat-value { font-size: var(--text-2xl); font-weight: var(--fw-bold); color: var(--green-text); letter-spacing: -0.03em; line-height: 1; margin-bottom: 4px; }
+.stat-delta { font-size: var(--text-xs); font-weight: var(--fw-medium); }
+.delta-pos { color: var(--color-success); }
+.delta-neg { color: var(--color-danger); }
+
+/* ══════════════════════════════════════════════════════════════
+   TABLE
+══════════════════════════════════════════════════════════════ */
+.table-wrap {
+  background: white;
+  border: 1px solid var(--cream-200);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 20px;
+}
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  padding: 11px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  color: var(--cream-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--cream-50);
+  border-bottom: 1px solid var(--cream-200);
+}
+tbody tr { border-bottom: 1px solid var(--cream-100); transition: background var(--ease-fast); }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--cream-50); }
+tbody td { padding: 13px 16px; font-size: var(--text-sm); color: var(--green-text); vertical-align: middle; }
+td.muted { color: var(--cream-text); }
+
+.avatar {
+  width: 30px; height: 30px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--green-700), var(--green-800));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  flex-shrink: 0;
+  letter-spacing: -0.5px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ALERTS
+══════════════════════════════════════════════════════════════ */
+.alert {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid;
+  margin-bottom: 10px;
+  font-size: var(--text-sm);
+}
+.alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.alert-title { font-weight: var(--fw-semibold); margin-bottom: 2px; }
+.alert-body { font-size: 12px; opacity: 0.8; }
+
+.alert-success { background: #d8f3dc; border-color: #95d5a8; color: #1b4332; }
+.alert-warning { background: #fef3cd; border-color: #f8d875; color: #7d4e00; }
+.alert-danger  { background: #fde8e6; border-color: #f5aca7; color: #922b21; }
+.alert-info    { background: #d6eaf8; border-color: #85c1e9; color: #1a5276; }
+
+/* ══════════════════════════════════════════════════════════════
+   APP LAYOUT PREVIEW
+══════════════════════════════════════════════════════════════ */
+.app-preview {
+  border: 1px solid var(--cream-200);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  height: 500px;
+  margin-bottom: 20px;
+}
+
+.app-sidebar {
+  width: 232px;
+  flex-shrink: 0;
+  background: var(--green-800);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 16px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 8px;
+}
+.sidebar-logo {
+  width: 32px; height: 32px;
+  border-radius: 7px;
+  background: var(--orange-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+}
+.sidebar-name { font-size: var(--text-sm); font-weight: var(--fw-bold); color: white; line-height: 1.2; }
+.sidebar-name span { font-size: 11px; font-weight: var(--fw-regular); color: var(--white-60); display: block; }
+
+.sidebar-section {
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--white-30);
+  margin-top: 12px;
+  margin-bottom: 2px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  margin: 0 6px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  color: var(--white-60);
+  cursor: pointer;
+  transition: all var(--ease-fast);
+  text-decoration: none;
+}
+.nav-item:hover { background: var(--white-10); color: var(--white-90); }
+.nav-item.active {
+  background: rgba(196,83,26,0.2);
+  color: var(--orange-300);
+}
+.nav-icon { font-size: 14px; width: 16px; text-align: center; flex-shrink: 0; }
+
+.sidebar-user {
+  margin-top: auto;
+  padding: 12px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.user-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--orange-500);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-size: var(--text-xs); font-weight: var(--fw-semibold); color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-email { font-size: 10px; color: var(--white-30); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.app-main {
+  flex: 1;
+  background: var(--cream-50);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.app-topbar {
+  height: 56px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--cream-200);
+  background: white;
+  flex-shrink: 0;
+}
+.topbar-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: var(--green-text);
+  letter-spacing: -0.02em;
+}
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+
+.app-content {
+  flex: 1;
+  padding: 24px;
+  overflow: auto;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TIMER WIDGET
+══════════════════════════════════════════════════════════════ */
+.timer-widget {
+  background: var(--green-800);
+  border-radius: var(--radius-xl);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-dark);
+}
+.timer-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--orange-400);
+  flex-shrink: 0;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:0.5; transform:scale(0.8); }
+}
+.timer-info { flex: 1; }
+.timer-client { font-size: 11px; color: var(--white-60); margin-bottom: 2px; }
+.timer-time { font-size: var(--text-2xl); font-weight: 700; font-family: var(--font-mono); color: white; letter-spacing: 0.04em; line-height: 1; }
+.timer-task { font-size: var(--text-xs); color: var(--white-60); margin-top: 2px; }
+
+/* ══════════════════════════════════════════════════════════════
+   PROGRESS
+══════════════════════════════════════════════════════════════ */
+.progress-bar { height: 6px; background: var(--cream-200); border-radius: var(--radius-full); overflow: hidden; }
+.progress-fill { height: 100%; border-radius: var(--radius-full); background: var(--green-700); }
+.progress-fill.warning { background: var(--color-warning); }
+.progress-fill.danger  { background: var(--color-danger); }
+
+/* ══════════════════════════════════════════════════════════════
+   SPACING REFERENCE
+══════════════════════════════════════════════════════════════ */
+.spacing-rows { display: flex; flex-direction: column; gap: 10px; }
+.spacing-row { display: flex; align-items: center; gap: 16px; }
+.spacing-box { height: 16px; background: rgba(196,83,26,0.15); border: 1px solid var(--orange-500); border-radius: 2px; flex-shrink: 0; }
+.spacing-info { font-size: 11px; font-family: var(--font-mono); color: var(--cream-muted); }
+.spacing-info strong { color: var(--green-text); }
+
+/* ══════════════════════════════════════════════════════════════
+   BORDER RADIUS
+══════════════════════════════════════════════════════════════ */
+.radius-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; }
+.radius-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.radius-box {
+  background: var(--cream-100);
+  border: 1.5px solid var(--cream-200);
+  width: 72px;
+  height: 56px;
+}
+.radius-lbl { font-size: 10px; font-family: var(--font-mono); color: var(--cream-muted); text-align: center; }
+
+/* ══════════════════════════════════════════════════════════════
+   CODE BLOCK
+══════════════════════════════════════════════════════════════ */
+.code {
+  background: var(--dark-900);
+  color: #d4d4d4;
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+  overflow-x: auto;
+  white-space: pre;
+  margin-bottom: 16px;
+  border: 1px solid var(--dark-500);
+}
+.c-key { color: #9cdcfe; }
+.c-val { color: #ce9178; }
+.c-str { color: #b5cea8; }
+.c-comment { color: #6a9955; }
+.c-orange { color: #f5a623; }
+
+/* ══════════════════════════════════════════════════════════════
+   PRINCIPLES
+══════════════════════════════════════════════════════════════ */
+.principles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.principle-card {
+  background: white;
+  border: 1px solid var(--cream-200);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+.principle-number {
+  font-family: var(--font-display);
+  font-size: 40px;
+  color: var(--cream-200);
+  line-height: 1;
+  margin-bottom: 12px;
+  letter-spacing: -0.03em;
+}
+.principle-title {
+  font-size: var(--text-base);
+  font-weight: var(--fw-bold);
+  color: var(--green-text);
+  margin-bottom: 8px;
+}
+.principle-desc {
+  font-size: var(--text-sm);
+  color: var(--cream-text);
+  line-height: 1.6;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DARK SECTION WRAPPER (for showing dark bg components)
+══════════════════════════════════════════════════════════════ */
+.dark-surface {
+  background: var(--dark-800);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  margin-bottom: 20px;
+}
+.dark-surface-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--white-30);
+  margin-bottom: 16px;
+}
+.green-surface {
+  background: var(--green-900);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  margin-bottom: 20px;
+}
+.green-surface-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  margin-bottom: 16px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   UTILITIES
+══════════════════════════════════════════════════════════════ */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.flex-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="sg-nav">
+  <div class="sg-nav-brand">
+    <div class="sg-nav-logo">CB</div>
+    Chainbridge · Design System
+  </div>
+  <div class="sg-nav-links">
+    <a href="#colors" class="sg-nav-link">Colors</a>
+    <a href="#type" class="sg-nav-link">Type</a>
+    <a href="#buttons" class="sg-nav-link">Buttons</a>
+    <a href="#inputs" class="sg-nav-link">Inputs</a>
+    <a href="#components" class="sg-nav-link">Components</a>
+    <a href="#layout" class="sg-nav-link">Layout</a>
+    <a href="#tailwind" class="sg-nav-link">Tailwind</a>
+  </div>
+</nav>
+
+<div class="sg-wrapper">
+
+<!-- ══ HEADER ════════════════════════════════════════════════ -->
+<header class="sg-header">
+  <div class="sg-eyebrow">Design System v1.0</div>
+  <h1 class="sg-title">Chainbridge<br><em>Style Guide</em></h1>
+  <p class="sg-subtitle">Visual language, design tokens, and component patterns for the Chainbridge time tracking platform. Derived directly from the Chainbridge Accounting & Advisory brand.</p>
+  <div class="sg-meta">
+    <div class="sg-meta-item"><strong>Primary Font</strong> DM Serif Display + DM Sans</div>
+    <div class="sg-meta-item"><strong>Accent</strong> Burnt Orange #C4531A</div>
+    <div class="sg-meta-item"><strong>Primary Dark</strong> Forest Green #1C3A28</div>
+    <div class="sg-meta-item"><strong>Base BG</strong> Warm Cream #F7F4EF</div>
+    <div class="sg-meta-item"><strong>Stack</strong> Next.js + Tailwind CSS</div>
+  </div>
+</header>
+
+<!-- ══ 1. COLORS ══════════════════════════════════════════════ -->
+<section class="sg-section" id="colors">
+  <div class="sg-section-header">
+    <div class="section-eyebrow">01 — Foundation</div>
+    <h2 class="section-title">Color Palette</h2>
+    <p class="section-desc">Three distinct background modes — cream (light), near-black (dark sections), and forest green (brand accent sections). Burnt orange is the singular interactive accent throughout.</p>
+  </div>
+
+  <div class="group-label">Interactive Accent — Burnt Orange</div>
+  <div class="color-grid" style="margin-bottom:0;">
+    <div class="color-card">
+      <div class="color-swatch" style="background:#c4531a;"><span class="swatch-tag">PRIMARY</span></div>
+      <div class="color-info"><div class="color-name">Orange 500</div><div class="color-hex">#c4531a</div><div class="color-role">CTAs, section labels, highlights, icon backgrounds</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#b04a16;"></div>
+      <div class="color-info"><div class="color-name">Orange 600</div><div class="color-hex">#b04a16</div><div class="color-role">Button hover state</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#e8763a;"></div>
+      <div class="color-info"><div class="color-name">Orange 400</div><div class="color-hex">#e8763a</div><div class="color-role">Icons on dark, timer dot</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#fdf3ed; border-bottom:1px solid #f7c9ab;"></div>
+      <div class="color-info"><div class="color-name">Orange 50</div><div class="color-hex">#fdf3ed</div><div class="color-role">Badge backgrounds, tinted surfaces</div></div>
+    </div>
+  </div>
+
+  <div class="group-label">Forest Green — Dark Surfaces & Brand</div>
+  <div class="color-grid" style="margin-bottom:0;">
+    <div class="color-card">
+      <div class="color-swatch" style="background:#142a1c;"><span class="swatch-tag">DEEP</span></div>
+      <div class="color-info"><div class="color-name">Green 900</div><div class="color-hex">#142a1c</div><div class="color-role">Section background ("Grow With Us")</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#1c3a28;"><span class="swatch-tag">PRIMARY</span></div>
+      <div class="color-info"><div class="color-name">Green 800</div><div class="color-hex">#1c3a28</div><div class="color-role">Sidebar, secondary button, Get Started CTA</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#24482f;"></div>
+      <div class="color-info"><div class="color-name">Green 700</div><div class="color-hex">#24482f</div><div class="color-role">Hover states, card surfaces on green</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#1a2e1f;"></div>
+      <div class="color-info"><div class="color-name">Green Text</div><div class="color-hex">#1a2e1f</div><div class="color-role">All headings on cream background</div></div>
+    </div>
+  </div>
+
+  <div class="group-label">Near-Black — Dark Section Background</div>
+  <div class="color-grid" style="margin-bottom:0;">
+    <div class="color-card">
+      <div class="color-swatch" style="background:#141412;"><span class="swatch-tag">DARKEST</span></div>
+      <div class="color-info"><div class="color-name">Dark 900</div><div class="color-hex">#141412</div><div class="color-role">Outcomes section bg, code blocks</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#1c1c19;"></div>
+      <div class="color-info"><div class="color-name">Dark 800</div><div class="color-hex">#1c1c19</div><div class="color-role">Dark section surface</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#252521;"></div>
+      <div class="color-info"><div class="color-name">Dark 700</div><div class="color-hex">#252521</div><div class="color-role">Cards on dark bg</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#3a3a35; border:1px solid #4a4a42;"></div>
+      <div class="color-info"><div class="color-name">Dark 500</div><div class="color-hex">#3a3a35</div><div class="color-role">Borders on dark surfaces</div></div>
+    </div>
+  </div>
+
+  <div class="group-label">Cream — Light Background & Text</div>
+  <div class="color-grid" style="margin-bottom:0;">
+    <div class="color-card">
+      <div class="color-swatch" style="background:#f7f4ef; border-bottom:1px solid #e5e1d8;"><span class="swatch-tag" style="color:#1a2e1f;background:rgba(0,0,0,0.1);">APP BG</span></div>
+      <div class="color-info"><div class="color-name">Cream 50</div><div class="color-hex">#f7f4ef</div><div class="color-role">App background, hero section</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#ede9e1; border-bottom:1px solid #e0dbd0;"></div>
+      <div class="color-info"><div class="color-name">Cream 100</div><div class="color-hex">#ede9e1</div><div class="color-role">Table header bg, disabled inputs</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#ddd9d0; border-bottom:1px solid #ccc8bf;"></div>
+      <div class="color-info"><div class="color-name">Cream 200</div><div class="color-hex">#ddd9d0</div><div class="color-role">Borders, dividers on light</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#4a4a42; border-bottom:1px solid #3a3a34;"></div>
+      <div class="color-info"><div class="color-name">Text Body</div><div class="color-hex">#4a4a42</div><div class="color-role">Body text on cream bg</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#7a7a70; border-bottom:1px solid #6a6a66;"></div>
+      <div class="color-info"><div class="color-name">Text Muted</div><div class="color-hex">#7a7a70</div><div class="color-role">Secondary text, placeholders</div></div>
+    </div>
+  </div>
+
+  <div class="group-label">Status & Semantic</div>
+  <div class="color-grid">
+    <div class="color-card">
+      <div class="color-swatch" style="background:#2d6a4f;"></div>
+      <div class="color-info"><div class="color-name">Success</div><div class="color-hex">#2d6a4f</div><div class="color-role">Approved, on-budget, active</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#d4a017;"></div>
+      <div class="color-info"><div class="color-name">Warning</div><div class="color-hex">#d4a017</div><div class="color-role">80% budget, pending</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#c0392b;"></div>
+      <div class="color-info"><div class="color-name">Danger</div><div class="color-hex">#c0392b</div><div class="color-role">Over budget, errors</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#7b68ee;"></div>
+      <div class="color-info"><div class="color-name">Hourly</div><div class="color-hex">#7b68ee</div><div class="color-role">Hourly billing badge</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#2ecc71;"></div>
+      <div class="color-info"><div class="color-name">Fixed Fee</div><div class="color-hex">#2ecc71</div><div class="color-role">Fixed fee billing badge</div></div>
+    </div>
+    <div class="color-card">
+      <div class="color-swatch" style="background:#c4531a;"></div>
+      <div class="color-info"><div class="color-name">Retainer</div><div class="color-hex">#c4531a</div><div class="color-role">Retainer billing badge</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="sg-divider"></div>
+
+<!-- ══ 2. TYPOGRAPHY ══════════════════════════════════════════ -->
+<section class="sg-section" id="type">
+  <div class="sg-section-header">
+    <div class="section-eyebrow">02 — Foundation</div>
+    <h2 class="section-title">Typography</h2>
+    <p class="section-desc">DM Serif Display for headings — elegant, authoritative, with character. DM Sans for all UI text — clean and highly legible. DM Mono for time values and numbers.</p>
+  </div>
+
+  <div class="font-block">
+    <div class="font-tag">Display — DM Serif Display</div>
+    <div class="font-specimen-display">Your finances, <em>finally</em> handled right.</div>
+    <div style="font-family:'DM Serif Display',serif;font-size:16px;color:var(--cream-text);">Use for: page titles, section headings, marketing copy, stat values</div>
+    <div class="font-weights">
+      <span class="fw-samp" style="font-family:'DM Serif Display',serif;font-weight:400;">Regular 400</span>
+      <span class="fw-samp" style="font-family:'DM Serif Display',serif;font-style:italic;">Italic 400i</span>
+    </div>
+  </div>
+
+  <div class="font-block">
+    <div class="font-tag">Interface — DM Sans</div>
+    <div class="font-specimen-sans">We bring AI-powered speed with human expertise.</div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:14px;color:var(--cream-text);">ABCDEFGHIJKLMNOPQRSTUVWXYZ · abcdefghijklmnopqrstuvwxyz · 0123456789</div>
+    <div class="font-weights">
+      <span class="fw-samp" style="font-weight:300;">Light 300</span>
+      <span class="fw-samp" style="font-weight:400;">Regular 400</span>
+      <span class="fw-samp" style="font-weight:500;">Medium 500</span>
+      <span class="fw-samp" style="font-weight:600;">Semibold 600</span>
+      <span class="fw-samp" style="font-weight:700;">Bold 700</span>
+    </div>
+  </div>
+
+  <div class="font-block">
+    <div class="font-tag">Monospace — DM Mono</div>
+    <div class="font-specimen-mono">02:47:33 &nbsp;&nbsp; $24,810.00 &nbsp;&nbsp; 186.5 hrs</div>
+    <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--cream-text);">Use for: running timers, hourly rates, durations, currency totals</div>
+  </div>
+
+  <table class="type-table">
+    <tbody>
+      <tr>
+        <td class="type-meta"><strong>text-5xl</strong>48px Display Bold</td>
+        <td><span style="font-family:'DM Serif Display',serif;font-size:2.8rem;color:var(--green-text);line-height:1.05;display:block;">Page hero title</span></td>
+        <td class="type-use">Hero h1 only</td>
+      </tr>
+      <tr>
+        <td class="type-meta"><strong>text-4xl</strong>36px Display Bold</td>
+        <td><span style="font-family:'DM Serif Display',serif;font-size:2.1rem;color:var(--green-text);line-height:1.1;display:block;">Section headings</span></td>
+        <td class="type-use">Page sections</td>
+      </tr>
+      <tr>
+        <td class="type-meta"><strong>text-3xl</strong>30px Sans Bold</td>
+        <td><span style="font-size:1.875rem;font-weight:700;color:var(--green-text);letter-spacing:-0.03em;display:block;">$24,810</span></td>
+        <td class="type-use">Large KPI numbers</td>
+      </tr>
+      <tr>
+        <td class="type-meta"><strong>text-2xl</strong>24px Sans Bold</td>
+        <td><span style="font-size:1.5rem;font-weight:700;color:var(--green-text);letter-spacing:-0.02em;display:block;">Card titles</span></td>
+        <td class="type-use">Card headings, modals</td>
+      </tr>
+      <tr>
+        <td class="type-meta"><strong>text-xl</strong>20px Sans Semibold</td>
+        <td><span style="font-size:1.25rem;font-weight:600;color:var(--green-text);display:block;">Topbar page title</span></td>
+        <td class="type-use">App topbar</td>
+      </tr>
+      <tr>
+        <td class="type-meta"><strong>text-base</strong>16px Sans Regular</td>
+        <td><span style="font-size:1rem;color:var(--cream-text);display:block;">Body text and descriptions. This is the standard reading size for paragraph content throughout the application.</span></td>
+        <td class="type-use">Body, descriptions</td>
+      </tr>
+      <tr>
+        <td class="type-meta"><strong>text-sm</strong>14px Sans Regular</td>
+        <td><span style="font-size:0.875rem;color:var(--cream-text);display:block;">Table cells, form labels, card content, nav items</span></td>
+        <td class="type-use">Most UI text</td>
+      </tr>
+      <tr>
+        <td class="type-meta"><strong>text-xs</strong>12px Sans Semibold</td>
+        <td><span style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--orange-500);display:block;">SECTION LABEL</span></td>
+        <td class="type-use">Eyebrows, table headers, badges</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<div class="sg-divider"></div>
+
+<!-- ══ 3. BUTTONS ════════════════════════════════════════════ -->
+<section class="sg-section" id="buttons">
+  <div class="sg-section-header">
+    <div class="section-eyebrow">03 — Components</div>
+    <h2 class="section-title">Buttons</h2>
+    <p class="section-desc">Three variants, two sizes, and dark-surface versions. Burnt orange primary CTAs should be used sparingly — one per page section max.</p>
+  </div>
+
+  <div class="group-label">Light surface (cream background)</div>
+  <div class="btn-row">
+    <button class="btn btn-primary">Schedule a Call →</button>
+    <button class="btn btn-secondary">See What Changes</button>
+    <button class="btn btn-ghost">Learn More</button>
+    <button class="btn btn-primary btn-sm">Get Started</button>
+    <button class="btn btn-secondary btn-sm">Cancel</button>
+    <button class="btn btn-primary btn-lg">Schedule a Discovery Call →</button>
+  </div>
+
+  <div class="group-label">Dark surface (outcomes / dark sections)</div>
+  <div class="btn-surface-wrap">
+    <div class="surface-label">Dark Section Context</div>
+    <button class="btn btn-primary-dark" style="background:var(--orange-cta);color:white;border-color:var(--orange-cta);">Schedule a Call →</button>
+    <button class="btn btn-ghost-dark">See What Changes</button>
+  </div>
+
+  <div class="group-label">Green surface (grow / green sections)</div>
+  <div class="green-surface">
+    <div class="green-surface-label">Green Section Context</div>
+    <div class="btn-row">
+      <button class="btn btn-primary-dark" style="background:var(--orange-cta);color:white;border-color:var(--orange-cta);">Talk to Us →</button>
+      <button class="btn" style="background:transparent;color:white;border-color:rgba(255,255,255,0.4);">Learn More</button>
+    </div>
+  </div>
+
+  <div class="group-label">States</div>
+  <div class="btn-row">
+    <button class="btn btn-primary" disabled style="opacity:0.5;cursor:not-allowed;">Disabled</button>
+    <button class="btn btn-primary" style="opacity:0.7;cursor:wait;">Loading…</button>
+    <button class="btn btn-secondary" style="background:var(--cream-100);">Hover state</button>
+  </div>
+</section>
+
+<div class="sg-divider"></div>
+
+<!-- ══ 4. FORM INPUTS ════════════════════════════════════════ -->
+<section class="sg-section" id="inputs">
+  <div class="sg-section-header">
+    <div class="section-eyebrow">04 — Components</div>
+    <h2 class="section-title">Form Inputs</h2>
+    <p class="section-desc">White inputs with cream borders on the cream background. Focus state uses forest green ring. Clean and minimal — no unnecessary decoration.</p>
+  </div>
+
+  <div class="input-grid">
+    <div class="form-group">
+      <label class="form-label">Client Name <span class="req">*</span></label>
+      <input class="input" type="text" placeholder="Acme Corp" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Project</label>
+      <div class="input-with-icon">
+        <span class="input-icon">📁</span>
+        <input class="input" type="text" placeholder="Q4 Bookkeeping" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Billing Type</label>
+      <select class="input">
+        <option>Hourly</option>
+        <option>Fixed Fee</option>
+        <option>Retainer</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Hourly Rate</label>
+      <div class="input-with-icon">
+        <span class="input-icon">$</span>
+        <input class="input" type="text" placeholder="150.00" />
+      </div>
+      <span class="form-hint">USD per hour. Leave blank if fixed fee.</span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Error State</label>
+      <input class="input error" type="text" value="invalid@" />
+      <span class="form-error">⚠ Please enter a valid email address.</span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Disabled</label>
+      <input class="input" type="text" placeholder="Not editable" disabled />
+      <span class="form-hint">Field is locked by admin.</span>
+    </div>
+  </div>
+</section>
+
+<div class="sg-divider"></div>
+
+<!-- ══ 5. BADGES ════════════════════════════════════════════ -->
+<section class="sg-section">
+  <div class="sg-section-header">
+    <div class="section-eyebrow">05 — Components</div>
+    <h2 class="section-title">Badges & Status</h2>
+    <p class="section-desc">Used for project status, billing types, and entity states. Always pair with a dot indicator for quick visual scanning.</p>
+  </div>
+
+  <div class="group-label">Status</div>
+  <div class="badge-row">
+    <span class="badge badge-success"><span class="badge-dot"></span>Active</span>
+    <span class="badge badge-warning"><span class="badge-dot"></span>Pending</span>
+    <span class="badge badge-danger"><span class="badge-dot"></span>Over Budget</span>
+    <span class="badge badge-info"><span class="badge-dot"></span>In Review</span>
+    <span class="badge badge-neutral">Archived</span>
+    <span class="badge badge-orange"><span class="badge-dot"></span>Due Soon</span>
+  </div>
+
+  <div class="group-label">Billing Type</div>
+  <div class="badge-row">
+    <span class="badge badge-hourly">⏱ Hourly</span>
+    <span class="badge badge-fixed">✓ Fixed Fee</span>
+    <span class="badge badge-retainer">↻ Retainer</span>
+  </div>
+</section>
+
+<div class="sg-divider"></div>
+
+<!-- ══ 6. ALERTS ════════════════════════════════════════════ -->
+<section class="sg-section">
+  <div class="sg-section-header">
+    <div class="section-eyebrow">06 — Components</div>
+    <h2 class="section-title">Alerts & Notifications</h2>
+  </div>
+
+  <div class="alert alert-success">
+    <span class="alert-icon">✓</span>
+    <div><div class="alert-title">Entry saved successfully</div><div class="alert-body">7.5 hours logged to Acme Corp — Q4 Bookkeeping on Feb 19, 2026.</div></div>
+  </div>
+  <div class="alert alert-warning">
+    <span class="alert-icon">⚠</span>
+    <div><div class="alert-title">Approaching budget limit</div><div class="alert-body">Acme Corp has used 82% of their monthly retainer hours. 14.4 hours remaining.</div></div>
+  </div>
+  <div class="alert alert-danger">
+    <span class="alert-icon">✕</span>
+    <div><div class="alert-title">Budget exceeded</div><div class="alert-body">IPBlock LLC has gone over their fixed-fee budget by 3.5 hours. Client approval needed.</div></div>
+  </div>
+  <div class="alert alert-info">
+    <span class="alert-icon">ℹ</span>
+    <div><div class="alert-title">Invoice ready to send</div><div class="alert-body">February invoice for Flowryd Inc. is generated and awaiting your review.</div></div>
+  </div>
+</section>
+
+<div class="sg-divider"></div>
+
+<!-- ══ 7. CARDS ═════════════════════════════════════════════ -->
+<section class="sg-section" id="components">
+  <div class="sg-section-header">
+    <div class="section-eyebrow">07 — Components</div>
+    <h2 class="section-title">Cards & Data Display</h2>
+  </div>
+
+  <div class="group-label">Stat cards (light surface)</div>
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Hours This Month</div>
+      <div class="stat-value">186.5</div>
+      <div class="stat-delta delta-pos">↑ 12% vs last month</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Billable Revenue</div>
+      <div class="stat-value">$24,810</div>
+      <div class="stat-delta delta-pos">↑ $3,200 vs last month</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Active Clients</div>
+      <div class="stat-value">12</div>
+      <div class="stat-delta" style="color:var(--cream-muted);">No change</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Billable Rate</div>
+      <div class="stat-value">$133</div>
+      <div class="stat-delta delta-neg">↓ $4 vs last month</div>
+    </div>
+  </div>
+
+  <div class="group-label">Feature cards (dark surface — outcomes section style)</div>
+  <div class="dark-surface">
+    <div class="dark-surface-label">Dark Section Context</div>
+    <div class="three-col">
+      <div class="card-dark">
+        <div class="card-icon">📄</div>
+        <div class="card-title">Clear, Accurate Financials</div>
+        <div class="card-body">Finally understand your P&L, balance sheet, and cash flow — presented in a way that actually makes sense.</div>
+      </div>
+      <div class="card-dark">
+        <div class="card-icon">📈</div>
+        <div class="card-title">Know Your Burn & Runway</div>
+        <div class="card-body">Always know how much cash you have, how fast you're spending it, and exactly how long your runway is.</div>
+      </div>
+      <div class="card-dark">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Revenue & Expense Trends</div>
+        <div class="card-body">Spot trends before they become problems. See where money is going and where it should go.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="group-label">Timer widget</div>
+  <div class="timer-widget" style="max-width:440px;">
+    <div class="timer-dot"></div>
+    <div class="timer-info">
+      <div class="timer-client">Acme Corp · Q4 Bookkeeping</div>
+      <div class="timer-time">02:47:33</div>
+      <div class="timer-task">Recording time…</div>
+    </div>
+    <button class="btn btn-sm" style="background:var(--orange-500);color:white;border-color:var(--orange-500);">Stop</button>
+  </div>
+
+  <div class="group-label">Progress bars (budget utilization)</div>
+  <div style="max-width:400px;display:flex;flex-direction:column;gap:16px;">
+    <div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:var(--text-xs);font-weight:600;color:var(--green-text);">Acme Corp</span>
+        <span style="font-size:var(--text-xs);color:var(--cream-muted);">42% used</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:42%;"></div></div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:var(--text-xs);font-weight:600;color:var(--green-text);">Flowryd Inc.</span>
+        <span style="font-size:var(--text-xs);color:#d4a017;">82% used</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill warning" style="width:82%;"></div></div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:var(--text-xs);font-weight:600;color:var(--green-text);">IPBlock LLC</span>
+        <span style="font-size:var(--text-xs);color:#c0392b;">113% used</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill danger" style="width:100%;"></div></div>
+    </div>
+  </div>
+</section>
+
+<div class="sg-divider"></div>
+
+<!-- ══ 8. DATA TABLE ══════════════════════════════════════════ -->
+<section class="sg-section">
+  <div class="sg-section-header">
+    <div class="section-eyebrow">08 — Components</div>
+    <h2 class="section-title">Data Tables</h2>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Client</th>
+          <th>Project</th>
+          <th>Billing</th>
+          <th>Hours</th>
+          <th>Amount</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div class="flex-row" style="gap:10px;">
+              <div class="avatar">AC</div>
+              <div>
+                <div style="font-weight:600;">Acme Corp</div>
+                <div style="font-size:11px;color:var(--cream-muted);">acmecorp.com</div>
+              </div>
+            </div>
+          </td>
+          <td>Q4 Bookkeeping</td>
+          <td><span class="badge badge-retainer">↻ Retainer</span></td>
+          <td class="muted" style="font-family:var(--font-mono);">42.0</td>
+          <td style="font-weight:600;font-family:var(--font-mono);">$6,300</td>
+          <td><span class="badge badge-success"><span class="badge-dot"></span>Active</span></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="flex-row" style="gap:10px;">
+              <div class="avatar">FL</div>
+              <div>
+                <div style="font-weight:600;">Flowryd Inc.</div>
+                <div style="font-size:11px;color:var(--cream-muted);">flowryd.io</div>
+              </div>
+            </div>
+          </td>
+          <td>Monthly Close</td>
+          <td><span class="badge badge-hourly">⏱ Hourly</span></td>
+          <td class="muted" style="font-family:var(--font-mono);">28.5</td>
+          <td style="font-weight:600;font-family:var(--font-mono);">$4,275</td>
+          <td><span class="badge badge-warning"><span class="badge-dot"></span>Pending</span></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="flex-row" style="gap:10px;">
+              <div class="avatar">IP</div>
+              <div>
+                <div style="font-weight:600;">IPBlock LLC</div>
+                <div style="font-size:11px;color:var(--cream-muted);">ipblock.xyz</div>
+              </div>
+            </div>
+          </td>
+          <td>Tax Advisory</td>
+          <td><span class="badge badge-fixed">✓ Fixed Fee</span></td>
+          <td class="muted" style="font-family:var(--font-mono);">18.0</td>
+          <td style="font-weight:600;font-family:var(--font-mono);">$5,000</td>
+          <td><span class="badge badge-danger"><span class="badge-dot"></span>Over Budget</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="sg-divider"></div>
+
+<!-- ══ 9. APP LAYOUT ══════════════════════════════════════════ -->
+<section class="sg-section" id="layout">
+  <div class="sg-section-header">
+    <div class="section-eyebrow">09 — Layout</div>
+    <h2 class="section-title">App Layout Preview</h2>
+    <p class="section-desc">The sidebar uses forest green (#1c3a28) — a direct lift from the brand. Cream background for the main content area maintains warmth and brand consistency.</p>
+  </div>
+
+  <div class="app-preview">
+    <!-- Sidebar -->
+    <div class="app-sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-logo">CB</div>
+        <div class="sidebar-name">Chainbridge<span>Time Tracking</span></div>
+      </div>
+      <div class="sidebar-section">Main</div>
+      <a class="nav-item active"><span class="nav-icon">🏠</span> Dashboard</a>
+      <a class="nav-item"><span class="nav-icon">⏱</span> Time Entries</a>
+      <a class="nav-item"><span class="nav-icon">👥</span> Clients</a>
+      <a class="nav-item"><span class="nav-icon">📁</span> Projects</a>
+      <div class="sidebar-section">Billing</div>
+      <a class="nav-item"><span class="nav-icon">📄</span> Invoices</a>
+      <a class="nav-item"><span class="nav-icon">📊</span> Reports</a>
+      <div class="sidebar-section">Settings</div>
+      <a class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+      <div class="sidebar-user">
+        <div class="user-avatar">JC</div>
+        <div class="user-info">
+          <div class="user-name">Joe Chainbridge</div>
+          <div class="user-email">joe@chainbridge.com</div>
+        </div>
+      </div>
+    </div>
+    <!-- Main -->
+    <div class="app-main">
+      <div class="app-topbar">
+        <div class="topbar-title">Dashboard</div>
+        <div class="topbar-actions">
+          <button class="btn btn-sm" style="background:var(--cream-100);color:var(--green-text);border:1.5px solid var(--cream-200);">Feb 2026 ▾</button>
+          <button class="btn btn-sm btn-primary">+ Log Time</button>
+        </div>
+      </div>
+      <div class="app-content">
+        <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px;">
+          <div class="stat-card">
+            <div class="stat-label">Hours This Month</div>
+            <div class="stat-value" style="font-size:var(--text-2xl);">186.5</div>
+            <div class="stat-delta delta-pos">↑ 12%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Billable Revenue</div>
+            <div class="stat-value" style="font-size:var(--text-2xl);">$24,810</div>
+            <div class="stat-delta delta-pos">↑ $3,200</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Active Clients</div>
+            <div class="stat-value" style="font-size:var(--text-2xl);">12</div>
+            <div class="stat-delta" style="color:var(--cream-muted);">Stable</div>
+          </div>
+        </div>
+        <div class="timer-widget" style="margin-bottom:0;padding:12px 16px;">
+          <div class="timer-dot"></div>
+          <div class="timer-info">
+            <div class="timer-client">Acme Corp · Q4 Bookkeeping</div>
+            <div class="timer-time" style="font-size:1.4rem;">02:47:33</div>
+          </div>
+          <button class="btn btn-sm" style="background:var(--orange-500);color:white;border-color:var(--orange-500);">Stop</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sg-divider"></div>
+
+<!-- ══ 10. SPACING ════════════════════════════════════════════ -->
+<section class="sg-section">
+  <div class="sg-section-header">
+    <div class="section-eyebrow">10 — Foundation</div>
+    <h2 class="section-title">Spacing System</h2>
+    <p class="section-desc">4px base unit. All spacing should use these multiples for visual consistency. Tailwind's default spacing scale maps directly.</p>
+  </div>
+
+  <div class="spacing-rows">
+    <div class="spacing-row"><div class="spacing-box" style="width:4px;"></div><span class="spacing-info"><strong>sp-1</strong> · 4px · Tailwind: p-1</span></div>
+    <div class="spacing-row"><div class="spacing-box" style="width:8px;"></div><span class="spacing-info"><strong>sp-2</strong> · 8px · Tailwind: p-2</span></div>
+    <div class="spacing-row"><div class="spacing-box" style="width:12px;"></div><span class="spacing-info"><strong>sp-3</strong> · 12px · Tailwind: p-3</span></div>
+    <div class="spacing-row"><div class="spacing-box" style="width:16px;"></div><span class="spacing-info"><strong>sp-4</strong> · 16px · Tailwind: p-4 (default component padding)</span></div>
+    <div class="spacing-row"><div class="spacing-box" style="width:24px;"></div><span class="spacing-info"><strong>sp-6</strong> · 24px · Tailwind: p-6 (card inner padding)</span></div>
+    <div class="spacing-row"><div class="spacing-box" style="width:32px;"></div><span class="spacing-info"><strong>sp-8</strong> · 32px · Tailwind: p-8 (section padding)</span></div>
+    <div class="spacing-row"><div class="spacing-box" style="width:48px;"></div><span class="spacing-info"><strong>sp-12</strong> · 48px · Tailwind: p-12 (section gap)</span></div>
+    <div class="spacing-row"><div class="spacing-box" style="width:64px;"></div><span class="spacing-info"><strong>sp-16</strong> · 64px · Tailwind: p-16 (large section vertical)</span></div>
+    <div class="spacing-row"><div class="spacing-box" style="width:80px;"></div><span class="spacing-info"><strong>sp-20</strong> · 80px · Tailwind: p-20 (between major sections)</span></div>
+  </div>
+</section>
+
+<div class="sg-divider"></div>
+
+<!-- ══ 11. BORDER RADIUS ══════════════════════════════════════ -->
+<section class="sg-section">
+  <div class="sg-section-header">
+    <div class="section-eyebrow">11 — Foundation</div>
+    <h2 class="section-title">Border Radius</h2>
+  </div>
+
+  <div class="radius-row">
+    <div class="radius-item">
+      <div class="radius-box" style="border-radius:4px;"></div>
+      <div class="radius-lbl">sm · 4px<br>Badges, tags</div>
+    </div>
+    <div class="radius-item">
+      <div class="radius-box" style="border-radius:8px;"></div>
+      <div class="radius-lbl">md · 8px<br>Inputs, btns sm</div>
+    </div>
+    <div class="radius-item">
+      <div class="radius-box" style="border-radius:12px;"></div>
+      <div class="radius-lbl">lg · 12px<br>Buttons, stat cards</div>
+    </div>
+    <div class="radius-item">
+      <div class="radius-box" style="border-radius:16px;"></div>
+      <div class="radius-lbl">xl · 16px<br>Cards, panels</div>
+    </div>
+    <div class="radius-item">
+      <div class="radius-box" style="border-radius:24px;"></div>
+      <div class="radius-lbl">2xl · 24px<br>Modals, large cards</div>
+    </div>
+    <div class="radius-item">
+      <div class="radius-box" style="border-radius:9999px;width:56px;height:56px;"></div>
+      <div class="radius-lbl">full<br>Pills, avatars</div>
+    </div>
+  </div>
+</section>
+
+<div class="sg-divider"></div>
+
+<!-- ══ 12. TAILWIND CONFIG ════════════════════════════════════ -->
+<section class="sg-section" id="tailwind">
+  <div class="sg-section-header">
+    <div class="section-eyebrow">12 — Implementation</div>
+    <h2 class="section-title">Tailwind Configuration</h2>
+    <p class="section-desc">Add this to your <code style="font-family:var(--font-mono);font-size:13px;background:var(--cream-100);padding:2px 6px;border-radius:4px;color:var(--orange-500);">tailwind.config.ts</code> to extend the default theme with Chainbridge tokens.</p>
+  </div>
+
+<div class="code"><span class="c-comment">// tailwind.config.ts</span>
+<span class="c-key">import</span> type { Config } from 'tailwindcss'
+
+<span class="c-key">const</span> config: Config = {
+  content: ['./src/**/*.{ts,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        <span class="c-comment">// Brand accent</span>
+        orange: {
+          <span class="c-str">50</span>:  <span class="c-val">'#fdf3ed'</span>,
+          <span class="c-str">100</span>: <span class="c-val">'#fbe0cc'</span>,
+          <span class="c-str">400</span>: <span class="c-val">'#e8763a'</span>,
+          <span class="c-str">500</span>: <span class="c-val">'#c4531a'</span>,  <span class="c-comment">// PRIMARY ACCENT</span>
+          <span class="c-str">600</span>: <span class="c-val">'#b04a16'</span>,
+        },
+        <span class="c-comment">// Forest green</span>
+        forest: {
+          <span class="c-str">700</span>: <span class="c-val">'#24482f'</span>,
+          <span class="c-str">800</span>: <span class="c-val">'#1c3a28'</span>,  <span class="c-comment">// PRIMARY DARK</span>
+          <span class="c-str">900</span>: <span class="c-val">'#142a1c'</span>,  <span class="c-comment">// DEEP SECTION BG</span>
+          <span class="c-str">text</span>: <span class="c-val">'#1a2e1f'</span>,  <span class="c-comment">// HEADING COLOR</span>
+        },
+        <span class="c-comment">// Near-black (dark sections)</span>
+        dark: {
+          <span class="c-str">700</span>: <span class="c-val">'#252521'</span>,
+          <span class="c-str">800</span>: <span class="c-val">'#1c1c19'</span>,
+          <span class="c-str">900</span>: <span class="c-val">'#141412'</span>,
+        },
+        <span class="c-comment">// Warm cream backgrounds</span>
+        cream: {
+          <span class="c-str">50</span>:  <span class="c-val">'#f7f4ef'</span>,  <span class="c-comment">// APP BG</span>
+          <span class="c-str">100</span>: <span class="c-val">'#ede9e1'</span>,
+          <span class="c-str">200</span>: <span class="c-val">'#ddd9d0'</span>,  <span class="c-comment">// BORDERS</span>
+          <span class="c-str">text</span>: <span class="c-val">'#4a4a42'</span>, <span class="c-comment">// BODY TEXT</span>
+          <span class="c-str">muted</span>:<span class="c-val">'#7a7a70'</span>, <span class="c-comment">// SECONDARY TEXT</span>
+        },
+      },
+      fontFamily: {
+        display: [<span class="c-val">'DM Serif Display'</span>, <span class="c-val">'Georgia'</span>, <span class="c-val">'serif'</span>],
+        sans:    [<span class="c-val">'DM Sans'</span>, <span class="c-val">'-apple-system'</span>, <span class="c-val">'sans-serif'</span>],
+        mono:    [<span class="c-val">'DM Mono'</span>, <span class="c-val">'Fira Code'</span>, <span class="c-val">'monospace'</span>],
+      },
+      borderRadius: {
+        xl:  <span class="c-val">'16px'</span>,
+        '2xl': <span class="c-val">'24px'</span>,
+      },
+      boxShadow: {
+        sm:   <span class="c-val">'0 1px 3px rgba(20,18,12,0.08)'</span>,
+        md:   <span class="c-val">'0 4px 16px rgba(20,18,12,0.12)'</span>,
+        lg:   <span class="c-val">'0 8px 32px rgba(20,18,12,0.16)'</span>,
+        dark: <span class="c-val">'0 4px 20px rgba(0,0,0,0.4)'</span>,
+      },
+    },
+  },
+  plugins: [],
+}
+
+export default config</div>
+
+  <div class="group-label">Common utility patterns</div>
+<div class="code"><span class="c-comment">/* Page background */</span>
+className=<span class="c-val">"min-h-screen bg-cream-50"</span>
+
+<span class="c-comment">/* Section labels (eyebrows) */</span>
+className=<span class="c-val">"text-xs font-semibold tracking-widest uppercase text-orange-500"</span>
+
+<span class="c-comment">/* Page heading */</span>
+className=<span class="c-val">"font-display text-4xl text-forest-text leading-tight tracking-tight"</span>
+
+<span class="c-comment">/* Body text */</span>
+className=<span class="c-val">"text-sm text-cream-text leading-relaxed"</span>
+
+<span class="c-comment">/* Primary button */</span>
+className=<span class="c-val">"bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-5 py-2.5 transition-all"</span>
+
+<span class="c-comment">/* Secondary button */</span>
+className=<span class="c-val">"border-1.5 border-forest-800 text-forest-800 hover:bg-forest-800 hover:text-white font-semibold rounded-xl px-5 py-2.5 transition-all"</span>
+
+<span class="c-comment">/* Card (light) */</span>
+className=<span class="c-val">"bg-white border border-cream-200 rounded-xl shadow-sm p-6"</span>
+
+<span class="c-comment">/* Card (dark section) */</span>
+className=<span class="c-val">"bg-dark-700 border border-dark-500 rounded-xl p-6"</span>
+
+<span class="c-comment">/* Sidebar */</span>
+className=<span class="c-val">"w-60 bg-forest-800 h-screen flex flex-col"</span>
+
+<span class="c-comment">/* Nav item active */</span>
+className=<span class="c-val">"flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-400 font-medium text-sm"</span>
+
+<span class="c-comment">/* Input */</span>
+className=<span class="c-val">"bg-white border-1.5 border-cream-200 focus:border-forest-800 focus:ring-2 focus:ring-forest-800/10 rounded-md px-3 py-2 text-sm font-sans w-full outline-none"</span>
+
+<span class="c-comment">/* Table header */</span>
+className=<span class="c-val">"text-xs font-semibold tracking-wider uppercase text-cream-muted bg-cream-50 px-4 py-3"</span></div>
+</section>
+
+<div class="sg-divider"></div>
+
+<!-- ══ 13. PRINCIPLES ══════════════════════════════════════════ -->
+<section class="sg-section">
+  <div class="sg-section-header">
+    <div class="section-eyebrow">13 — Guidelines</div>
+    <h2 class="section-title">Design Principles</h2>
+  </div>
+  <div class="principles-grid">
+    <div class="principle-card">
+      <div class="principle-number">01</div>
+      <div class="principle-title">Warm, Not Clinical</div>
+      <div class="principle-desc">Accounting tools are often cold and sterile. The cream background, serif headings, and burnt orange accent create warmth without sacrificing professionalism.</div>
+    </div>
+    <div class="principle-card">
+      <div class="principle-number">02</div>
+      <div class="principle-title">Orange Is Precious</div>
+      <div class="principle-desc">Burnt orange draws the eye. Use it only for CTAs, section labels, active states, and critical highlights. Never decorate with it — only signal.</div>
+    </div>
+    <div class="principle-card">
+      <div class="principle-number">03</div>
+      <div class="principle-title">Three Surface Modes</div>
+      <div class="principle-desc">Cream for the app, near-black for dense content sections, forest green for brand-forward moments (sidebar, marketing panels). Never mix arbitrarily.</div>
+    </div>
+    <div class="principle-card">
+      <div class="principle-number">04</div>
+      <div class="principle-title">Data Clarity First</div>
+      <div class="principle-desc">Numbers should be instantly readable. Use DM Mono for all time values and currency. Letter-spacing -0.03em on large numerics. Tables are never decorative.</div>
+    </div>
+    <div class="principle-card">
+      <div class="principle-number">05</div>
+      <div class="principle-title">Serif for Humanity</div>
+      <div class="principle-desc">DM Serif Display on headings carries the voice of a trusted advisor, not a dashboard tool. Use it for page titles, section headings, and marketing copy.</div>
+    </div>
+    <div class="principle-card">
+      <div class="principle-number">06</div>
+      <div class="principle-title">White Cards on Cream</div>
+      <div class="principle-desc">Cards are white (#ffffff) on the cream background — a subtle but important distinction. Never use cream-on-cream. Borders at #ddd9d0, shadow-sm for lift.</div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /sg-wrapper -->
+</body>
+</html>
