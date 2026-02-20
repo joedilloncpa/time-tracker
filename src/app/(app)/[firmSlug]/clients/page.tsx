@@ -178,6 +178,7 @@ export default async function ClientsPage({
   const clients = await prisma.client.findMany({
     where: {
       tenantId,
+      NOT: { code: INTERNAL_FIRM_CLIENT_CODE },
       ...(showInactiveClients ? {} : { status: "active" })
     },
     include: {

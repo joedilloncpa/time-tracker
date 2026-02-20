@@ -7,6 +7,7 @@ import { getUserContext } from "@/lib/auth";
 import { ensureRole } from "@/lib/permissions";
 import { ExcelFilterField } from "@/components/excel-filter-field";
 import { assertTenantBySlug } from "@/lib/tenant";
+import { INTERNAL_FIRM_CLIENT_CODE } from "@/lib/firm-work";
 
 type WorkstreamsParams = {
   add?: string;
@@ -138,7 +139,10 @@ export default async function WorkstreamsPage({
     .filter(Boolean);
 
   const clients = await prisma.client.findMany({
-    where: { tenantId },
+    where: {
+      tenantId,
+      NOT: { code: INTERNAL_FIRM_CLIENT_CODE }
+    },
     select: { id: true, name: true, code: true },
     orderBy: { name: "asc" }
   });
@@ -146,6 +150,11 @@ export default async function WorkstreamsPage({
   const workstreams = await prisma.workstream.findMany({
     where: {
       tenantId,
+      client: {
+        code: {
+          not: INTERNAL_FIRM_CLIENT_CODE
+        }
+      },
       ...(includeArchived ? {} : { status: "active" }),
       ...(selectedClientIds.length ? { clientId: { in: selectedClientIds } } : {})
     },
