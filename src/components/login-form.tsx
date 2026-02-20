@@ -10,6 +10,18 @@ function normalizeNextPath(nextPath: string) {
   return nextPath;
 }
 
+function getAuthOrigin() {
+  const configured = process.env.NEXT_PUBLIC_APP_URL;
+  if (configured) {
+    try {
+      return new URL(configured).origin;
+    } catch {
+      // ignore invalid env; fallback to browser origin
+    }
+  }
+  return window.location.origin;
+}
+
 export function LoginForm({ nextPath }: { nextPath: string }) {
   const safeNextPath = normalizeNextPath(nextPath);
   const supabase = useMemo(() => getBrowserSupabaseClient(), []);
@@ -50,7 +62,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
     setLoading(true);
 
     const callbackNext = encodeURIComponent(safeNextPath);
-    const redirectTo = `${window.location.origin}/auth/callback?next=${callbackNext}`;
+    const redirectTo = `${getAuthOrigin()}/auth/callback?next=${callbackNext}`;
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {

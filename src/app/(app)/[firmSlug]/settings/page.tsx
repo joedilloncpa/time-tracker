@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { UserRole } from "@prisma/client";
@@ -14,6 +15,7 @@ import {
   normalizeTenantSettings,
   withUserClientPermissions
 } from "@/lib/tenant-settings";
+import { getAuthRedirectOrigin } from "@/lib/url";
 
 type SettingsParams = {
   section?: string;
@@ -153,9 +155,9 @@ async function inviteUser(formData: FormData) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  const redirectTo = process.env.NEXT_PUBLIC_APP_URL
-    ? `${process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/auth/callback`
-    : undefined;
+  const requestHeaders = await headers();
+  const authOrigin = getAuthRedirectOrigin(requestHeaders);
+  const redirectTo = authOrigin ? `${authOrigin}/auth/callback` : undefined;
   const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
     ...(redirectTo ? { redirectTo } : {})
   });
