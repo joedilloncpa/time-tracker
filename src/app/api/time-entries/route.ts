@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
         tenantId,
         status: "active"
       },
-      select: { id: true }
+      select: { id: true, code: true }
     });
     if (!client) {
       return jsonError("Selected client is inactive or unavailable", 400);
