@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 type FormSubmitButtonProps = {
@@ -20,21 +20,26 @@ export function FormSubmitButton({
 }: FormSubmitButtonProps) {
   const { pending } = useFormStatus();
   const [showSuccess, setShowSuccess] = useState(false);
-  const [wasPending, setWasPending] = useState(false);
+  const wasPendingRef = useRef(false);
 
   useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+
     if (pending) {
-      setWasPending(true);
       setShowSuccess(false);
-      return;
-    }
-    if (wasPending) {
+      wasPendingRef.current = true;
+    } else if (wasPendingRef.current) {
       setShowSuccess(true);
-      setWasPending(false);
-      const timeout = setTimeout(() => setShowSuccess(false), 1000);
-      return () => clearTimeout(timeout);
+      timeout = setTimeout(() => setShowSuccess(false), 1000);
+      wasPendingRef.current = false;
     }
-  }, [pending, wasPending]);
+
+    return () => {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+    };
+  }, [pending]);
 
   return (
     <button className={className} disabled={pending} type={type}>
