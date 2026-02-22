@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
 type TimerRow = {
@@ -76,6 +77,14 @@ export function DashboardTimerRows({
   const [draft, setDraft] = useState<DraftRow | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   function beginEdit(row: TimerRow) {
     setEditingId(row.id);
@@ -141,6 +150,72 @@ export function DashboardTimerRows({
     setDraft(null);
     setError("");
   }
+
+  async function confirmDelete() {
+    if (!deletingId) {
+      return;
+    }
+
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const response = await fetch(
+        `/api/time-entries?firmSlug=${encodeURIComponent(firmSlug)}&id=${encodeURIComponent(deletingId)}`,
+        { method: "DELETE" }
+      );
+
+      if (!response.ok) {
+        const payload = (await response.json()) as { error?: string };
+        throw new Error(payload.error || "Failed to delete time entry");
+      }
+
+      setDeletingId(null);
+      router.refresh();
+    } catch (deleteErr) {
+      setDeleteError(deleteErr instanceof Error ? deleteErr.message : "Failed to delete time entry");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  function cancelDelete() {
+    setDeletingId(null);
+    setDeleteError("");
+  }
+
+  const deleteModal = deletingId && mounted
+    ? createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={cancelDelete}>
+          <div
+            className="mx-4 w-full max-w-sm rounded-lg bg-white p-6 shadow-[0_8px_32px_rgba(20,18,12,0.16)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-sm font-medium text-[#1a2e1f]">Delete this time entry?</p>
+            <p className="mt-1 text-xs text-[#7a7a70]">This action cannot be undone.</p>
+            {deleteError ? <p className="mt-2 text-xs text-red-600">{deleteError}</p> : null}
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                className="button-secondary !h-8 !px-3 !text-sm"
+                disabled={deleting}
+                onClick={cancelDelete}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="!h-8 !px-3 !text-sm rounded-md bg-red-600 text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                disabled={deleting}
+                onClick={confirmDelete}
+                type="button"
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )
+    : null;
 
   return (
     <>
@@ -224,6 +299,7 @@ export function DashboardTimerRows({
                   </div>
                   {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}
                 </td>
+                <td className="py-2"></td>
               </tr>
             );
           }
@@ -252,18 +328,37 @@ export function DashboardTimerRows({
                   {timer.isBillable ? "Client Work" : "Firm Work"}
                 </span>
               </td>
-              <td className="py-2">{timer.notes || "-"}</td>
+              <td className="py-2 pr-3">{timer.notes || "-"}</td>
+              <td className="py-2">
+                <button
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-[#7a7a70] transition-colors hover:bg-red-50 hover:text-red-600"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeletingId(timer.id);
+                  }}
+                  title="Delete entry"
+                  type="button"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    <line x1="10" y1="11" x2="10" y2="17" />
+                    <line x1="14" y1="11" x2="14" y2="17" />
+                  </svg>
+                </button>
+              </td>
             </tr>
           );
         })}
       </tbody>
       <tfoot>
         <tr>
-          <td className="pt-2 text-xs text-[#4a4a42]" colSpan={isAdmin ? 8 : 7}>
+          <td className="pt-2 text-xs text-[#4a4a42]" colSpan={isAdmin ? 9 : 8}>
             Tip: double-click any timer row to edit inline.
           </td>
         </tr>
       </tfoot>
+      {deleteModal}
     </>
   );
 }
