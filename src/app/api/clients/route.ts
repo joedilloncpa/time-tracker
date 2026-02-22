@@ -3,6 +3,7 @@ import { ClientStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getApiContextFromSearchParams } from "@/lib/api-context";
 import { jsonError } from "@/lib/http";
+import { checkAndHandleClientLimit } from "@/lib/subscription";
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,6 +38,14 @@ export async function POST(request: NextRequest) {
 
     if (!body.name) {
       return jsonError("Client name is required");
+    }
+
+    const limitCheck = await checkAndHandleClientLimit(user.tenantId ?? "");
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        { error: limitCheck.message, needsBilling: limitCheck.reason === "needs_billing" },
+        { status: 402 }
+      );
     }
 
     const client = await prisma.client.create({

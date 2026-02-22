@@ -165,6 +165,15 @@ async function inviteUser(formData: FormData) {
       redirectWithError("This email already belongs to another firm");
     }
 
+    // Check user limit before inviting (skip if re-activating existing user on same tenant)
+    if (!existing || existing.tenantId !== user.tenantId) {
+      const { checkAndHandleUserLimit } = await import("@/lib/subscription");
+      const limitCheck = await checkAndHandleUserLimit(tenantId);
+      if (!limitCheck.allowed) {
+        redirectWithError(limitCheck.message);
+      }
+    }
+
     let inviteeId = "";
     if (existing) {
       const updated = await prisma.user.update({

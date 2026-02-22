@@ -30,12 +30,12 @@ export function LandingPage() {
             >
               Log in
             </Link>
-            <a
-              href="#"
+            <Link
+              href="/signup"
               className="rounded-lg bg-[#c4531a] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#b04a16]"
             >
               Sign up
-            </a>
+            </Link>
           </div>
         </div>
       </header>
@@ -55,12 +55,12 @@ export function LandingPage() {
               clear. No bloat, no learning curve, no 47-tab setup wizard.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <a
-                href="#"
+              <Link
+                href="/signup"
                 className="inline-flex h-12 items-center rounded-xl bg-[#c4531a] px-8 text-base font-semibold text-white transition-colors hover:bg-[#b04a16]"
               >
                 Get started free
-              </a>
+              </Link>
               <a
                 href="#features"
                 className="inline-flex h-12 items-center rounded-xl border border-[#ddd9d0] bg-white px-8 text-base font-semibold text-[#1c3a28] transition-colors hover:bg-[#ede9e1]"
@@ -311,12 +311,12 @@ export function LandingPage() {
               Set up your team in minutes. No credit card required. No 30-page
               onboarding guide.
             </p>
-            <a
-              href="#"
+            <Link
+              href="/signup"
               className="inline-flex h-12 items-center rounded-xl bg-[#c4531a] px-10 text-base font-semibold text-white transition-colors hover:bg-[#b04a16]"
             >
               Get started free
-            </a>
+            </Link>
           </div>
         </section>
       </main>
@@ -338,9 +338,9 @@ export function LandingPage() {
               <Link href="/login" className="transition-colors hover:text-white/80">
                 Log in
               </Link>
-              <a href="#" className="transition-colors hover:text-white/80">
+              <Link href="/signup" className="transition-colors hover:text-white/80">
                 Sign up
-              </a>
+              </Link>
               <a href="#" className="transition-colors hover:text-white/80">
                 Privacy
               </a>

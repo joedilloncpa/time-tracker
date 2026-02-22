@@ -19,6 +19,7 @@ export async function getApiContextFromSearchParams(searchParams: URLSearchParam
       tenant &&
       tenant.subscriptionStatus !== "active" &&
       tenant.subscriptionStatus !== "trialing" &&
+      tenant.subscriptionStatus !== "free" &&
       !tenant.subscriptionStatus.startsWith("past_due")
     ) {
       throw new Error("Subscription inactive");

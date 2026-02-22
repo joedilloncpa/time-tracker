@@ -24,48 +24,96 @@ export async function POST(request: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const metadata = session.metadata ?? {};
+    const tenantId = metadata.tenantId;
 
-    const firmName = metadata.firmName;
-    const firmSlug = metadata.firmSlug;
-    const adminEmail = metadata.adminEmail;
-    const adminName = metadata.adminName ?? "Firm Admin";
+    if (tenantId && typeof session.subscription === "string") {
+      // Billing setup checkout (new flow): tenant already exists, link subscription
+      await prisma.tenant.update({
+        where: { id: tenantId },
+        data: {
+          stripeCustomerId: typeof session.customer === "string" ? session.customer : undefined,
+          stripeSubscriptionId: session.subscription,
+          subscriptionStatus: "active"
+        }
+      });
+    } else {
+      // Legacy flow: provision tenant from Stripe checkout metadata
+      const firmName = metadata.firmName;
+      const firmSlug = metadata.firmSlug;
+      const adminEmail = metadata.adminEmail;
+      const adminName = metadata.adminName ?? "Firm Admin";
 
-    if (!firmName || !firmSlug || !adminEmail) {
-      return NextResponse.json({ error: "Missing metadata for tenant provisioning" }, { status: 400 });
+      if (firmName && firmSlug && adminEmail) {
+        await prisma.$transaction(async (tx) => {
+          const tenant = await tx.tenant.upsert({
+            where: { slug: firmSlug },
+            create: {
+              name: firmName,
+              slug: firmSlug,
+              stripeCustomerId: typeof session.customer === "string" ? session.customer : null,
+              stripeSubscriptionId: typeof session.subscription === "string" ? session.subscription : null,
+              subscriptionStatus: "active"
+            },
+            update: {
+              stripeCustomerId: typeof session.customer === "string" ? session.customer : null,
+              stripeSubscriptionId: typeof session.subscription === "string" ? session.subscription : null,
+              subscriptionStatus: "active"
+            }
+          });
+
+          await tx.user.upsert({
+            where: { email: adminEmail.toLowerCase() },
+            create: {
+              tenantId: tenant.id,
+              email: adminEmail.toLowerCase(),
+              name: adminName,
+              role: "firm_admin"
+            },
+            update: {
+              tenantId: tenant.id,
+              role: "firm_admin",
+              isActive: true
+            }
+          });
+        });
+      }
     }
+  }
 
-    await prisma.$transaction(async (tx) => {
-      const tenant = await tx.tenant.upsert({
-        where: { slug: firmSlug },
-        create: {
-          name: firmName,
-          slug: firmSlug,
-          stripeCustomerId: typeof session.customer === "string" ? session.customer : null,
-          stripeSubscriptionId: typeof session.subscription === "string" ? session.subscription : null,
-          subscriptionStatus: "active"
-        },
-        update: {
-          stripeCustomerId: typeof session.customer === "string" ? session.customer : null,
-          stripeSubscriptionId: typeof session.subscription === "string" ? session.subscription : null,
-          subscriptionStatus: "active"
+  if (event.type === "customer.subscription.updated") {
+    const subscription = event.data.object;
+    const tenantId = subscription.metadata?.tenantId;
+    if (tenantId) {
+      await prisma.tenant.update({
+        where: { id: tenantId },
+        data: { subscriptionStatus: subscription.status }
+      });
+    }
+  }
+
+  if (event.type === "customer.subscription.deleted") {
+    const subscription = event.data.object;
+    const tenantId = subscription.metadata?.tenantId;
+    if (tenantId) {
+      await prisma.tenant.update({
+        where: { id: tenantId },
+        data: {
+          subscriptionStatus: "canceled",
+          stripeSubscriptionId: null
         }
       });
+    }
+  }
 
-      await tx.user.upsert({
-        where: { email: adminEmail.toLowerCase() },
-        create: {
-          tenantId: tenant.id,
-          email: adminEmail.toLowerCase(),
-          name: adminName,
-          role: "firm_admin"
-        },
-        update: {
-          tenantId: tenant.id,
-          role: "firm_admin",
-          isActive: true
-        }
+  if (event.type === "invoice.payment_failed") {
+    const invoice = event.data.object;
+    const subscriptionId = typeof invoice.subscription === "string" ? invoice.subscription : null;
+    if (subscriptionId) {
+      await prisma.tenant.updateMany({
+        where: { stripeSubscriptionId: subscriptionId },
+        data: { subscriptionStatus: "past_due" }
       });
-    });
+    }
   }
 
   return NextResponse.json({ received: true });
