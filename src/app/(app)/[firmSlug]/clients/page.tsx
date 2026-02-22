@@ -259,12 +259,16 @@ export default async function ClientsPage({
                 </svg>
                 <span className="font-semibold text-[#1a2e1f]">{client.name}</span>
                 <span className="text-xs text-[#7a7a70]">{client.workstreams.length} workstream{client.workstreams.length === 1 ? "" : "s"}</span>
-                <details className="group/settings ml-auto" onClick={(e) => e.stopPropagation()}>
-                  <summary className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-md text-[#7a7a70] transition-colors hover:bg-[#f7f4ef] hover:text-[#4a4a42]" title="Client settings">
-                    <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              </summary>
+
+              <div className="pb-2.5 pl-7">
+                <details className="mb-2">
+                  <summary className="flex h-8 w-fit cursor-pointer list-none items-center gap-1.5 rounded-md px-2 text-xs text-[#7a7a70] transition-colors hover:bg-[#f7f4ef] hover:text-[#4a4a42] [&::-webkit-details-marker]:hidden">
+                    <svg aria-hidden="true" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                       <circle cx="12" cy="12" r="3.5" />
                       <path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 0 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2 1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9 1 1 0 0 0 1.1-.2l.1-.1a2 2 0 0 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1 1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6z" />
                     </svg>
+                    Client settings
                   </summary>
                   <form action={updateClient} className="mt-1 grid gap-2 rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] p-3 md:grid-cols-3">
                     <input type="hidden" name="firmSlug" value={firmSlug} />
@@ -294,9 +298,6 @@ export default async function ClientsPage({
                     </FormSubmitButton>
                   </form>
                 </details>
-              </summary>
-
-              <div className="pb-2.5 pl-7">
                 {client.workstreams.length === 0 ? (
                   <p className="text-sm text-[#7a7a70]">No workstreams yet.</p>
                 ) : (
