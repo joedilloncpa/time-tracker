@@ -8,7 +8,7 @@ export function LandingPage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/">
             <p
-              className="cb-display text-[2.4rem] leading-none tracking-[-0.03em] text-[#1c3a28]"
+              className="cb-display text-[3.1rem] leading-none tracking-[-0.03em] text-[#1c3a28]"
               style={{
                 fontFamily: "Baskerville, 'Times New Roman', serif",
                 fontWeight: 600,
@@ -48,9 +48,8 @@ export function LandingPage() {
               Time tracking your team will actually use
             </h1>
             <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed text-[#4a4a42]">
-              Your team logs hours. You run reports. Everyone sees
-              profitability. No bloat, no learning curve, no 47-tab setup
-              wizard.
+              Your team logs hours. You run reports. Profitability is
+              clear. No bloat, no learning curve, no 47-tab setup wizard.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <a
