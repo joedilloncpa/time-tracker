@@ -307,6 +307,88 @@ async function resendInvite(formData: FormData) {
   }
 }
 
+async function retractInvite(formData: FormData) {
+  "use server";
+  const firmSlug = String(formData.get("firmSlug") || "");
+  const inviteeId = String(formData.get("userId") || "");
+  const redirectBase = `/${firmSlug}/settings?section=users`;
+  const redirectWithError = (message: string) => {
+    redirect(`${redirectBase}&inviteError=${encodeURIComponent(message)}`);
+  };
+
+  try {
+    const user = await getUserContext(firmSlug);
+    ensureRole(user, ["firm_admin", "super_admin"]);
+    const tenantId = user.tenantId ?? "";
+
+    if (!inviteeId) {
+      redirectWithError("Invite user is required");
+    }
+
+    const invitee = await prisma.user.findFirst({
+      where: { id: inviteeId, tenantId, supabaseAuthId: null },
+      select: { id: true, email: true },
+    });
+    if (!invitee) {
+      redirectWithError("Pending invite not found");
+      return;
+    }
+
+    // Best-effort: delete the Supabase auth user to invalidate the magic link
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+
+      let supabaseUserId: string | null = null;
+      let page = 1;
+      const perPage = 50;
+      while (!supabaseUserId) {
+        const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+        if (error || !data.users.length) break;
+        const match = data.users.find(
+          (u) => u.email?.toLowerCase() === invitee.email.toLowerCase()
+        );
+        if (match) {
+          supabaseUserId = match.id;
+        } else if (data.users.length < perPage) {
+          break;
+        } else {
+          page++;
+        }
+      }
+
+      if (supabaseUserId) {
+        await supabaseAdmin.auth.admin.deleteUser(supabaseUserId).catch(() => {});
+      }
+    }
+
+    // Remove invite delivery status from tenant settings
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { settingsJson: true },
+    });
+    const nextSettings = withInviteDeliveryStatus(tenant?.settingsJson, invitee.id, null);
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: { settingsJson: nextSettings },
+    });
+
+    // Delete the pending user from the app database
+    await prisma.user.delete({ where: { id: invitee.id } });
+
+    revalidatePath(`/${firmSlug}/settings`);
+    redirect(`${redirectBase}&inviteSuccess=retracted`);
+  } catch (error) {
+    if (isRedirectControlError(error)) {
+      throw error;
+    }
+    const message = error instanceof Error ? error.message : "Unable to retract invite";
+    redirectWithError(message);
+  }
+}
+
 async function updateUserRole(formData: FormData) {
   "use server";
   const firmSlug = String(formData.get("firmSlug") || "");
@@ -756,9 +838,13 @@ export default async function SettingsPage({
                     {inviteError}
                   </p>
                 ) : null}
-                {inviteSuccess === "1" || inviteSuccess === "resent" ? (
+                {inviteSuccess === "1" || inviteSuccess === "resent" || inviteSuccess === "retracted" ? (
                   <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                    {inviteSuccess === "resent" ? "Invite resent successfully." : "Invite sent successfully."}
+                    {inviteSuccess === "retracted"
+                      ? "Invite retracted successfully."
+                      : inviteSuccess === "resent"
+                        ? "Invite resent successfully."
+                        : "Invite sent successfully."}
                   </p>
                 ) : null}
                 <form action={inviteUser} className="grid gap-3 md:grid-cols-4">
@@ -817,6 +903,13 @@ export default async function SettingsPage({
                               <input name="userId" type="hidden" value={member.id} />
                               <FormSubmitButton className="button-secondary !h-9 px-3 text-xs" pendingText="Resending..." successText="Resent">
                                 Resend invite
+                              </FormSubmitButton>
+                            </form>
+                            <form action={retractInvite} className="mt-1">
+                              <input name="firmSlug" type="hidden" value={firmSlug} />
+                              <input name="userId" type="hidden" value={member.id} />
+                              <FormSubmitButton className="button-secondary !h-9 px-3 text-xs text-red-700 hover:bg-red-50 hover:border-red-300" pendingText="Retracting..." successText="Retracted">
+                                Retract invite
                               </FormSubmitButton>
                             </form>
                           </div>
