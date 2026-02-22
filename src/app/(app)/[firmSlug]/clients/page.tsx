@@ -247,24 +247,26 @@ export default async function ClientsPage({
           </label>
           <button className="button-secondary ml-3 px-3" type="submit">Apply</button>
         </form>
-        <ul className="mt-4 space-y-1.5">
+        <div className="mt-4 divide-y divide-[#ddd9d0]">
           {clients.length === 0 ? (
-            <li className="rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] p-4 text-sm text-[#7a7a70]">No clients yet.</li>
+            <p className="py-4 text-sm text-[#7a7a70]">No clients yet.</p>
           ) : null}
           {clients.map((client) => (
-            <li key={client.id} className="rounded-lg border border-[#ddd9d0] px-4 py-2.5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <p className="font-semibold text-[#1a2e1f]">{client.name}</p>
-                </div>
-                <details className="group">
-                  <summary className="button-secondary flex h-9 w-9 cursor-pointer list-none items-center justify-center p-0" title="Client settings">
-                    <svg aria-hidden="true" className="h-4 w-4 text-[#4a4a42]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <details key={client.id} className="group/client">
+              <summary className="flex cursor-pointer items-center gap-3 py-2.5 [&::-webkit-details-marker]:hidden">
+                <svg aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-[#7a7a70] transition-transform group-open/client:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+                <span className="font-semibold text-[#1a2e1f]">{client.name}</span>
+                <span className="text-xs text-[#7a7a70]">{client.workstreams.length} workstream{client.workstreams.length === 1 ? "" : "s"}</span>
+                <details className="group/settings ml-auto" onClick={(e) => e.stopPropagation()}>
+                  <summary className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-md text-[#7a7a70] transition-colors hover:bg-[#f7f4ef] hover:text-[#4a4a42]" title="Client settings">
+                    <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                       <circle cx="12" cy="12" r="3.5" />
                       <path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 0 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2 1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9 1 1 0 0 0 1.1-.2l.1-.1a2 2 0 0 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1 1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6z" />
                     </svg>
                   </summary>
-                  <form action={updateClient} className="mt-2 grid gap-2 rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] p-3 md:grid-cols-3">
+                  <form action={updateClient} className="mt-1 grid gap-2 rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] p-3 md:grid-cols-3">
                     <input type="hidden" name="firmSlug" value={firmSlug} />
                     <input type="hidden" name="clientId" value={client.id} />
                     <input type="hidden" name="includeInactive" value={showInactiveClients ? "1" : "0"} />
@@ -292,56 +294,47 @@ export default async function ClientsPage({
                     </FormSubmitButton>
                   </form>
                 </details>
-              </div>
+              </summary>
 
-              <details className="mt-2">
-                <summary className="button-secondary w-fit cursor-pointer !h-8 px-3 text-xs">
-                  Workstreams ({client.workstreams.length})
-                </summary>
-                <ul className="mt-1.5 space-y-1 rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] p-2">
-                  {client.workstreams.length === 0 ? (
-                    <li className="text-sm text-[#7a7a70]">No workstreams for this client yet.</li>
-                  ) : (
-                    client.workstreams.map((workstream) => (
-                      <li key={workstream.id} className="rounded-md border border-[#ddd9d0] bg-white px-3 py-1.5 text-sm text-[#1a2e1f]">
-                        <form action={updateWorkstreamStatus} className="flex flex-wrap items-center justify-between gap-2">
-                          <input name="firmSlug" type="hidden" value={firmSlug} />
-                          <input name="workstreamId" type="hidden" value={workstream.id} />
-                          <div className="flex items-center gap-2">
-                            <span>{workstream.name}</span>
-                            <span className="text-xs text-[#7a7a70]">
-                              {workstream.status === "active" ? "Active" : "Inactive"}
-                            </span>
-                          </div>
-                          <input
-                            name="status"
-                            type="hidden"
-                            value={workstream.status === "active" ? "archived" : "active"}
-                          />
-                          <button
-                            aria-label={`Toggle ${workstream.name} ${workstream.status === "active" ? "inactive" : "active"}`}
-                            className={`relative inline-flex h-5 w-9 items-center rounded-full border transition-colors ${
-                              workstream.status === "active"
-                                ? "border-[#24482f] bg-[#24482f]"
-                                : "border-[#c9c4b8] bg-[#e5e1d9]"
+              <div className="pb-2.5 pl-7">
+                {client.workstreams.length === 0 ? (
+                  <p className="text-sm text-[#7a7a70]">No workstreams yet.</p>
+                ) : (
+                  <div className="space-y-0.5">
+                    {client.workstreams.map((workstream) => (
+                      <form key={workstream.id} action={updateWorkstreamStatus} className="flex items-center justify-between gap-3 rounded-md px-2 py-1 transition-colors hover:bg-[#f7f4ef]">
+                        <input name="firmSlug" type="hidden" value={firmSlug} />
+                        <input name="workstreamId" type="hidden" value={workstream.id} />
+                        <input name="status" type="hidden" value={workstream.status === "active" ? "archived" : "active"} />
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm ${workstream.status === "active" ? "text-[#1a2e1f]" : "text-[#7a7a70]"}`}>{workstream.name}</span>
+                          {workstream.status !== "active" ? (
+                            <span className="text-[11px] text-[#7a7a70]">archived</span>
+                          ) : null}
+                        </div>
+                        <button
+                          aria-label={`Toggle ${workstream.name} ${workstream.status === "active" ? "inactive" : "active"}`}
+                          className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors ${
+                            workstream.status === "active"
+                              ? "border-[#24482f] bg-[#24482f]"
+                              : "border-[#c9c4b8] bg-[#e5e1d9]"
+                          }`}
+                          type="submit"
+                        >
+                          <span
+                            className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                              workstream.status === "active" ? "translate-x-[18px]" : "translate-x-0.5"
                             }`}
-                            type="submit"
-                          >
-                            <span
-                              className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-                                workstream.status === "active" ? "translate-x-[18px]" : "translate-x-0.5"
-                              }`}
-                            />
-                          </button>
-                        </form>
-                      </li>
-                    ))
-                  )}
-                </ul>
-              </details>
-            </li>
+                          />
+                        </button>
+                      </form>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </details>
           ))}
-        </ul>
+        </div>
       </section>
 
       {openAddClient ? (
