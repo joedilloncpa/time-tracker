@@ -434,7 +434,7 @@ export default async function DashboardPage({
               )}
             </colgroup>
             <thead>
-              <tr>
+              <tr className="[&>th]:bg-[#1c3a28] [&>th]:text-white">
                 <th>Client</th>
                 <th style={{ textAlign: "right" }}>Hours</th>
                 {isAdmin ? (
