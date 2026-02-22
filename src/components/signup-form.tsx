@@ -1,14 +1,16 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getBrowserSupabaseClient } from "@/lib/supabase-browser";
 
 type SignupMode = "choose" | "firm" | "join";
 
-export function SignupForm() {
+const FIRM_NAME_KEY = "tally_signup_firm_name";
+
+export function SignupForm({ returning }: { returning: boolean }) {
   const supabase = useMemo(() => getBrowserSupabaseClient(), []);
-  const [mode, setMode] = useState<SignupMode>("choose");
+  const [mode, setMode] = useState<SignupMode>(returning ? "firm" : "choose");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [firmName, setFirmName] = useState("");
@@ -16,6 +18,95 @@ export function SignupForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [oauthHandled, setOauthHandled] = useState(false);
+
+  // Handle returning from Google OAuth: provision tenant with stored firm name
+  useEffect(() => {
+    if (!returning || oauthHandled || !supabase) return;
+    setOauthHandled(true);
+
+    async function completeGoogleSignup() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const storedFirmName = sessionStorage.getItem(FIRM_NAME_KEY);
+        if (!storedFirmName) {
+          setError("Firm name was lost during sign-in. Please try again.");
+          setLoading(false);
+          return;
+        }
+
+        const { data: { user: authUser } } = await supabase!.auth.getUser();
+        if (!authUser || !authUser.email) {
+          setError("Unable to retrieve your Google account details. Please try again.");
+          setLoading(false);
+          return;
+        }
+
+        const googleName =
+          authUser.user_metadata?.full_name ||
+          authUser.user_metadata?.name ||
+          authUser.email.split("@")[0];
+
+        const res = await fetch("/api/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: googleName,
+            email: authUser.email,
+            firmName: storedFirmName
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          if (res.status === 409) {
+            setError(data.error || "An account with this email already exists. Please log in instead.");
+          } else {
+            setError(data.error || "Signup failed");
+          }
+          setLoading(false);
+          return;
+        }
+
+        sessionStorage.removeItem(FIRM_NAME_KEY);
+        window.location.replace(`/${data.tenantSlug}/dashboard`);
+      } catch {
+        setError("An unexpected error occurred. Please try again.");
+        setLoading(false);
+      }
+    }
+
+    void completeGoogleSignup();
+  }, [returning, oauthHandled, supabase]);
+
+  async function onGoogleSignup() {
+    if (!firmName.trim()) {
+      setError("Please enter your firm name before continuing with Google.");
+      return;
+    }
+    setError("");
+    if (!supabase) {
+      setError("Auth is not configured.");
+      return;
+    }
+    setLoading(true);
+
+    // Store firm name so we can retrieve it after the OAuth redirect
+    sessionStorage.setItem(FIRM_NAME_KEY, firmName.trim());
+
+    const redirectTo = `${window.location.origin}/auth/complete?next=${encodeURIComponent("/signup?returning=1")}`;
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo }
+    });
+
+    if (oauthError) {
+      setLoading(false);
+      setError(oauthError.message || "Unable to start Google sign in");
+    }
+  }
 
   async function onSignupSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -68,6 +159,21 @@ export function SignupForm() {
     }
 
     setLoading(false);
+  }
+
+  // Returning from Google OAuth — show loading state
+  if (returning && !error) {
+    return (
+      <div className="card w-full max-w-md space-y-4 text-center">
+        <p
+          className="cb-display text-[3.1rem] leading-none tracking-[-0.03em] text-[#1c3a28]"
+          style={{ fontFamily: "Baskerville, 'Times New Roman', serif", fontWeight: 600 }}
+        >
+          Tally<span className="text-[#c4531a]">.</span>
+        </p>
+        <p className="text-sm text-[#4a4a42]">Setting up your firm account...</p>
+      </div>
+    );
   }
 
   if (success) {
@@ -186,7 +292,7 @@ export function SignupForm() {
     <div className="card w-full max-w-md space-y-4">
       <button
         type="button"
-        onClick={() => setMode("choose")}
+        onClick={() => { setMode("choose"); setError(""); }}
         className="text-sm text-[#7a7a70] hover:text-[#1c3a28]"
       >
         &larr; Back
@@ -202,6 +308,34 @@ export function SignupForm() {
         <p className="text-sm text-[#7a7a70]">
           Create your firm account. Free to start &mdash; no credit card required.
         </p>
+      </div>
+
+      {/* Firm name — required for both Google and email signup */}
+      <label className="block space-y-1">
+        <span className="text-sm font-medium text-[#1c3a28]">Firm Name</span>
+        <input
+          className="input h-11"
+          onChange={(e) => setFirmName(e.target.value)}
+          placeholder="e.g. Northstar Accounting"
+          required
+          type="text"
+          value={firmName}
+        />
+      </label>
+
+      <button
+        className="button-secondary h-11 w-full text-base"
+        disabled={loading}
+        onClick={onGoogleSignup}
+        type="button"
+      >
+        Continue with Google
+      </button>
+
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-[#ddd9d0]" />
+        <span className="text-xs uppercase tracking-[0.12em] text-[#7a7a70]">or sign up with email</span>
+        <div className="h-px flex-1 bg-[#ddd9d0]" />
       </div>
 
       <form className="space-y-3" onSubmit={onSignupSubmit}>
@@ -225,17 +359,6 @@ export function SignupForm() {
             required
             type="email"
             value={email}
-          />
-        </label>
-        <label className="block space-y-1">
-          <span className="text-sm font-medium text-[#1c3a28]">Firm Name</span>
-          <input
-            className="input h-11"
-            onChange={(e) => setFirmName(e.target.value)}
-            placeholder="e.g. Northstar Accounting"
-            required
-            type="text"
-            value={firmName}
           />
         </label>
         <label className="block space-y-1">
