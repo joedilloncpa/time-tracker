@@ -92,7 +92,10 @@ export function LoginForm({ nextPath, oauthCode }: { nextPath: string; oauthCode
   return (
     <div className="card w-full max-w-md space-y-4">
       <div className="space-y-1">
-        <h1 className="cb-display text-4xl text-[#1c3a28]">
+        <h1
+          className="cb-display text-[3.1rem] leading-none tracking-[-0.03em] text-[#1c3a28]"
+          style={{ fontFamily: "Baskerville, 'Times New Roman', serif", fontWeight: 600 }}
+        >
           Tally<span className="text-[#c4531a]">.</span>
         </h1>
         <p className="text-sm text-[#7a7a70]">Sign in with Google or email and password.</p>
