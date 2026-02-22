@@ -461,14 +461,14 @@ export default async function DashboardPage({
                           <svg className="h-3.5 w-3.5 shrink-0 text-[#7a7a70] transition-transform group-open/dash:rotate-90" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" /></svg>
                           {row.name}
                         </span>
-                        <span className="text-right tabular-nums">{row.hours.toFixed(2)}</span>
+                        <span className="pr-[14px] text-right tabular-nums">{row.hours.toFixed(2)}</span>
                         {isAdmin ? (
                           <>
-                            <span className="text-right tabular-nums">{usd(row.totalBilling)}</span>
-                            <span className="text-right tabular-nums">{usd(row.averageBillingRate, 2)}</span>
-                            <span className="text-right tabular-nums">{usd(row.totalCost)}</span>
-                            <span className="text-right tabular-nums">{usd(row.averageCost, 2)}</span>
-                            <span className="text-right tabular-nums">{usd(row.profit)}</span>
+                            <span className="pr-[14px] text-right tabular-nums">{usd(row.totalBilling)}</span>
+                            <span className="pr-[14px] text-right tabular-nums">{usd(row.averageBillingRate, 2)}</span>
+                            <span className="pr-[14px] text-right tabular-nums">{usd(row.totalCost)}</span>
+                            <span className="pr-[14px] text-right tabular-nums">{usd(row.averageCost, 2)}</span>
+                            <span className="pr-[14px] text-right tabular-nums">{usd(row.profit)}</span>
                           </>
                         ) : null}
                       </summary>
@@ -476,7 +476,7 @@ export default async function DashboardPage({
                         <div className="overflow-x-auto">
                           <table className="min-w-full text-sm">
                             <thead>
-                              <tr className="border-b border-[#ddd9d0] bg-[rgba(28,58,40,0.04)] text-left text-xs uppercase tracking-[0.06em] text-[#4a4a42]">
+                              <tr className="border-b border-[#ddd9d0] bg-[#ede9e1] text-left text-xs uppercase tracking-[0.06em] text-[#4a4a42]">
                                 <th className="py-1.5 pr-3">Date</th>
                                 {isAdmin ? <th className="py-1.5 pr-3">Employee</th> : null}
                                 <th className="py-1.5 pr-3">Workstream</th>
