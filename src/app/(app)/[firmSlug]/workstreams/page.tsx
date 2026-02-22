@@ -387,7 +387,7 @@ export default async function WorkstreamsPage({
           <button className="button-secondary px-3" type="submit">Apply</button>
         </form>
 
-        <ul className="space-y-3">
+        <ul className="space-y-1.5">
           {workstreamGroups.length === 0 ? (
             <li className="rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] p-4 text-sm text-[#7a7a70]">
               No workstreams found.
@@ -406,7 +406,7 @@ export default async function WorkstreamsPage({
             return (
               <li key={group.name} className="rounded-lg border border-[#ddd9d0]">
                 <details>
-                  <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-[#1a2e1f] [&::-webkit-details-marker]:hidden">
+                  <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 py-2 text-[#1a2e1f] [&::-webkit-details-marker]:hidden">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-[#7a7a70]">▸</span>
                       <div>
@@ -431,9 +431,9 @@ export default async function WorkstreamsPage({
                     </div>
                   </summary>
 
-                  <div className="space-y-2 border-t border-[#ddd9d0] bg-[#fbfaf7] p-3">
+                  <div className="space-y-1.5 border-t border-[#ddd9d0] bg-[#fbfaf7] p-2.5">
                     {isAdmin ? (
-                      <div className="grid gap-2 md:grid-cols-[1fr_1fr_1fr_auto_auto]">
+                      <div className="grid gap-1.5 md:grid-cols-[1fr_1fr_1fr_auto_auto]">
                         <form action={updateWorkstreamGroup} className="contents">
                           <input name="firmSlug" type="hidden" value={firmSlug} />
                           <input name="workstreamIds" type="hidden" value={group.rows.map((row) => row.id).join(",")} />
@@ -468,7 +468,7 @@ export default async function WorkstreamsPage({
                     ) : null}
 
                     {isAdmin && availableClients.length > 0 ? (
-                      <form action={addWorkstreamToClient} className="grid gap-2 md:grid-cols-[minmax(180px,1fr)_auto]">
+                      <form action={addWorkstreamToClient} className="grid gap-1.5 md:grid-cols-[minmax(180px,1fr)_auto]">
                         <input name="firmSlug" type="hidden" value={firmSlug} />
                         <input name="templateWorkstreamId" type="hidden" value={group.rows[0].id} />
                         <select className="input !h-9 !py-1.5" name="clientId" required>
@@ -493,7 +493,7 @@ export default async function WorkstreamsPage({
                             <form
                               key={row.id}
                               action={updateSingleWorkstream}
-                              className="grid items-center gap-2 rounded-md border border-[#e8e3d9] bg-white p-2 md:grid-cols-[minmax(180px,1fr)_1fr_1fr_1fr_auto]"
+                              className="grid items-center gap-2 rounded-md border border-[#e8e3d9] bg-white px-2.5 py-1.5 md:grid-cols-[minmax(180px,1fr)_1fr_1fr_1fr_auto]"
                             >
                               <input name="firmSlug" type="hidden" value={firmSlug} />
                               <input name="workstreamId" type="hidden" value={row.id} />
@@ -519,7 +519,7 @@ export default async function WorkstreamsPage({
                           ))}
                       </div>
                     ) : (
-                      <ul className="space-y-1 rounded-md border border-[#e8e3d9] bg-white p-2 text-sm text-[#4a4a42]">
+                      <ul className="space-y-0.5 rounded-md border border-[#e8e3d9] bg-white px-2.5 py-1.5 text-sm text-[#4a4a42]">
                         {group.rows
                           .sort((a, b) => a.client.name.localeCompare(b.client.name))
                           .map((row) => (
