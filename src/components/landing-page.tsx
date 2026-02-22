@@ -293,11 +293,6 @@ export function LandingPage() {
               Tally to track every hour without the overhead of enterprise
               software.
             </p>
-            <div className="mt-12 flex items-center justify-center gap-10">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="h-8 w-24 rounded bg-[#ede9e1]" />
-              ))}
-            </div>
           </div>
         </section>
 
