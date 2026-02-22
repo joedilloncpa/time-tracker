@@ -469,55 +469,51 @@ export default async function WorkstreamsPage({
                       </div>
 
                       {/* Footer actions */}
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                        <form action={updateWorkstreamGroup} className="flex items-center gap-1.5">
+                      <div className="space-y-2 rounded-lg bg-[#f7f4ef] px-3 py-2.5">
+                        {/* Bulk update */}
+                        <form action={updateWorkstreamGroup} className="flex flex-wrap items-center gap-2">
                           <input name="firmSlug" type="hidden" value={firmSlug} />
                           <input name="workstreamIds" type="hidden" value={group.rows.map((row) => row.id).join(",")} />
-                          <span className="shrink-0 text-xs text-[#7a7a70]">Bulk:</span>
+                          <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-[#7a7a70]">Set for all</span>
                           <input
-                            className="input !h-7 w-20 !py-0 text-xs"
+                            className="input !h-8 w-24 !py-0 text-xs [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             defaultValue={sharedRate == null || sharedRate === undefined ? "" : Number(sharedRate).toString()}
                             name="billingRate"
-                            placeholder="Rate"
+                            placeholder="Rate ($)"
                             step="0.01"
                             type="number"
                           />
-                          <select className="input !h-7 w-24 !py-0 text-xs" defaultValue={sharedBillingType} name="billingType">
-                            <option value="">Billing…</option>
+                          <select className="input !h-8 w-28 !py-0 text-xs" defaultValue={sharedBillingType} name="billingType">
+                            <option value="">Billing type…</option>
                             <option value="hourly">hourly</option>
                             <option value="monthly_fixed">fixed</option>
                           </select>
-                          <select className="input !h-7 w-24 !py-0 text-xs" defaultValue={sharedStatus} name="status">
-                            <option value="">Status…</option>
-                            <option value="active">active</option>
-                            <option value="inactive">inactive</option>
-                          </select>
-                          <FormSubmitButton className="button-secondary !h-7 px-2.5 text-xs" pendingText="…">Apply all</FormSubmitButton>
+                          <FormSubmitButton className="button-secondary !h-8 px-3 text-xs" pendingText="…">Apply to all</FormSubmitButton>
                         </form>
 
-                        {availableClients.length > 0 ? (
-                          <form action={addWorkstreamToClient} className="flex items-center gap-1.5">
+                        {/* Add client + delete */}
+                        <div className="flex items-center justify-between gap-2">
+                          {availableClients.length > 0 ? (
+                            <form action={addWorkstreamToClient} className="flex items-center gap-1.5">
+                              <input name="firmSlug" type="hidden" value={firmSlug} />
+                              <input name="templateWorkstreamId" type="hidden" value={group.rows[0].id} />
+                              <select className="input !h-8 !py-0 text-xs" name="clientId" required>
+                                <option value="">Add client…</option>
+                                {availableClients.map((client) => (
+                                  <option key={`${group.name}-${client.id}`} value={client.id}>
+                                    {client.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <FormSubmitButton className="button-secondary !h-8 px-3 text-xs" pendingText="…" successText="Added">Add</FormSubmitButton>
+                            </form>
+                          ) : <div />}
+                          <form action={deleteWorkstreamGroup}>
                             <input name="firmSlug" type="hidden" value={firmSlug} />
-                            <input name="templateWorkstreamId" type="hidden" value={group.rows[0].id} />
-                            <select className="input !h-7 !py-0 text-xs" name="clientId" required>
-                              <option value="">Add client…</option>
-                              {availableClients.map((client) => (
-                                <option key={`${group.name}-${client.id}`} value={client.id}>
-                                  {client.name}
-                                </option>
-                              ))}
-                            </select>
-                            <FormSubmitButton className="button-secondary !h-7 px-2.5 text-xs" pendingText="…" successText="Added">Add</FormSubmitButton>
+                            <input name="workstreamIds" type="hidden" value={group.rows.map((row) => row.id).join(",")} />
+                            <FormSubmitButton className="button-secondary !h-8 px-3 text-xs text-red-500 hover:text-red-700" pendingText="…">Delete all</FormSubmitButton>
                           </form>
-                        ) : null}
-
-                        <form action={deleteWorkstreamGroup} className="ml-auto">
-                          <input name="firmSlug" type="hidden" value={firmSlug} />
-                          <input name="workstreamIds" type="hidden" value={group.rows.map((row) => row.id).join(",")} />
-                          <FormSubmitButton className="!h-7 px-2 text-xs text-red-500 transition-colors hover:text-red-700" pendingText="…">
-                            Delete all
-                          </FormSubmitButton>
-                        </form>
+                        </div>
                       </div>
                     </>
                   ) : (
