@@ -387,11 +387,9 @@ export default async function WorkstreamsPage({
           <button className="button-secondary px-3" type="submit">Apply</button>
         </form>
 
-        <ul className="space-y-1.5">
+        <div className="divide-y divide-[#ddd9d0]">
           {workstreamGroups.length === 0 ? (
-            <li className="rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] p-4 text-sm text-[#7a7a70]">
-              No workstreams found.
-            </li>
+            <p className="py-4 text-sm text-[#7a7a70]">No workstreams found.</p>
           ) : null}
           {workstreamGroups.map((group) => {
             const billingTypes = uniqueValues(group.rows.map((row) => toUiBillingType(row.billingType)));
@@ -404,135 +402,128 @@ export default async function WorkstreamsPage({
             const availableClients = clients.filter((client) => !existingClientIds.has(client.id));
 
             return (
-              <li key={group.name} className="rounded-lg border border-[#ddd9d0]">
-                <details>
-                  <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 py-2 text-[#1a2e1f] [&::-webkit-details-marker]:hidden">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-[#7a7a70]">▸</span>
-                      <div>
-                        <p className="font-semibold">{group.name}</p>
-                        <p className="text-xs text-[#7a7a70]">
-                          {group.clientNames.length} client{group.clientNames.length === 1 ? "" : "s"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-[#7a7a70]">
-                      <span>{sharedStatus || "mixed status"}</span>
-                      <span>•</span>
-                      <span>{sharedBillingType === "monthly_fixed" ? "monthly fixed" : sharedBillingType || "mixed billing type"}</span>
-                      {isAdmin ? (
-                        <>
-                          <span>•</span>
-                          <span>
-                            {sharedRate === undefined ? "mixed rates" : sharedRate == null ? "No rate" : `$${Number(sharedRate).toFixed(2)}`}
-                          </span>
-                        </>
-                      ) : null}
-                    </div>
-                  </summary>
-
-                  <div className="space-y-1.5 border-t border-[#ddd9d0] bg-[#fbfaf7] p-2.5">
-                    {isAdmin ? (
-                      <div className="grid gap-1.5 md:grid-cols-[1fr_1fr_1fr_auto_auto]">
-                        <form action={updateWorkstreamGroup} className="contents">
-                          <input name="firmSlug" type="hidden" value={firmSlug} />
-                          <input name="workstreamIds" type="hidden" value={group.rows.map((row) => row.id).join(",")} />
-                          <select className="input !h-9 !py-1.5" defaultValue={sharedBillingType} name="billingType">
-                            <option value="">Keep billing type</option>
-                            <option value="hourly">hourly</option>
-                            <option value="monthly_fixed">monthly fixed</option>
-                          </select>
-                          <select className="input !h-9 !py-1.5" defaultValue={sharedStatus} name="status">
-                            <option value="">Keep status</option>
-                            <option value="active">active</option>
-                            <option value="inactive">inactive</option>
-                          </select>
-                          <input
-                            className="input !h-9 !py-1.5"
-                            defaultValue={sharedRate == null || sharedRate === undefined ? "" : Number(sharedRate).toString()}
-                            name="billingRate"
-                            placeholder={sharedRate === undefined ? "Set shared rate" : "Rate"}
-                            step="0.01"
-                            type="number"
-                          />
-                          <FormSubmitButton className="button !h-9 px-3" pendingText="Applying...">Apply all</FormSubmitButton>
-                        </form>
-                        <form action={deleteWorkstreamGroup}>
-                          <input name="firmSlug" type="hidden" value={firmSlug} />
-                          <input name="workstreamIds" type="hidden" value={group.rows.map((row) => row.id).join(",")} />
-                          <FormSubmitButton className="button-danger !h-9 px-3" pendingText="Deleting..." successText="Deleted">
-                            Delete
-                          </FormSubmitButton>
-                        </form>
-                      </div>
+              <details key={group.name} className="group/ws">
+                <summary className="flex cursor-pointer items-center gap-3 py-2.5 [&::-webkit-details-marker]:hidden">
+                  <svg aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-[#7a7a70] transition-transform group-open/ws:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                  <span className="font-semibold text-[#1a2e1f]">{group.name}</span>
+                  <span className="text-xs text-[#7a7a70]">
+                    {group.clientNames.length} client{group.clientNames.length === 1 ? "" : "s"}
+                  </span>
+                  <div className="ml-auto flex items-center gap-1.5 text-xs text-[#7a7a70]">
+                    <span>{sharedStatus || "mixed"}</span>
+                    <span>•</span>
+                    <span>{sharedBillingType === "monthly_fixed" ? "fixed" : sharedBillingType || "mixed"}</span>
+                    {isAdmin && sharedRate !== undefined ? (
+                      <>
+                        <span>•</span>
+                        <span>{sharedRate == null ? "—" : `$${Number(sharedRate).toFixed(2)}`}</span>
+                      </>
                     ) : null}
+                  </div>
+                </summary>
 
-                    {isAdmin && availableClients.length > 0 ? (
-                      <form action={addWorkstreamToClient} className="grid gap-1.5 md:grid-cols-[minmax(180px,1fr)_auto]">
-                        <input name="firmSlug" type="hidden" value={firmSlug} />
-                        <input name="templateWorkstreamId" type="hidden" value={group.rows[0].id} />
-                        <select className="input !h-9 !py-1.5" name="clientId" required>
-                          <option value="">Apply this workstream to another client</option>
-                          {availableClients.map((client) => (
-                            <option key={`${group.name}-${client.id}`} value={client.id}>
-                              {client.name}
-                            </option>
-                          ))}
-                        </select>
-                        <FormSubmitButton className="button-secondary !h-9 px-3" pendingText="Adding..." successText="Added">
-                          Add client
-                        </FormSubmitButton>
-                      </form>
-                    ) : null}
-
-                    {isAdmin ? (
-                      <div className="space-y-1">
+                <div className="max-w-2xl pb-2.5 pl-7">
+                  {isAdmin ? (
+                    <>
+                      <div className="mb-2 space-y-1">
                         {group.rows
                           .sort((a, b) => a.client.name.localeCompare(b.client.name))
                           .map((row) => (
                             <form
                               key={row.id}
                               action={updateSingleWorkstream}
-                              className="grid items-center gap-2 rounded-md border border-[#e8e3d9] bg-white px-2.5 py-1.5 md:grid-cols-[minmax(180px,1fr)_1fr_1fr_1fr_auto]"
+                              className="flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-[#f7f4ef]"
                             >
                               <input name="firmSlug" type="hidden" value={firmSlug} />
                               <input name="workstreamId" type="hidden" value={row.id} />
-                              <div className="self-center text-sm font-medium text-[#1a2e1f]">{row.client.name}</div>
+                              <span className="min-w-[120px] text-sm font-medium text-[#1a2e1f]">{row.client.name}</span>
                               <input
-                                className="input !h-9 !py-1.5"
+                                className="input !h-8 w-24 !py-1 text-xs"
                                 defaultValue={row.billingRate == null ? "" : Number(row.billingRate).toString()}
                                 name="billingRate"
                                 placeholder="Rate"
                                 step="0.01"
                                 type="number"
                               />
-                              <select className="input !h-9 !py-1.5" defaultValue={toUiBillingType(row.billingType)} name="billingType">
+                              <select className="input !h-8 w-28 !py-1 text-xs" defaultValue={toUiBillingType(row.billingType)} name="billingType">
                                 <option value="hourly">hourly</option>
-                                <option value="monthly_fixed">monthly fixed</option>
+                                <option value="monthly_fixed">fixed</option>
                               </select>
-                              <select className="input !h-9 !py-1.5" defaultValue={toUiStatus(row.status)} name="status">
+                              <select className="input !h-8 w-24 !py-1 text-xs" defaultValue={toUiStatus(row.status)} name="status">
                                 <option value="active">active</option>
                                 <option value="inactive">inactive</option>
                               </select>
-                              <FormSubmitButton className="button !h-9 px-3" pendingText="Saving...">Save</FormSubmitButton>
+                              <FormSubmitButton className="button !h-8 px-2.5 text-xs" pendingText="..." successText="Saved">Save</FormSubmitButton>
                             </form>
                           ))}
                       </div>
-                    ) : (
-                      <ul className="space-y-0.5 rounded-md border border-[#e8e3d9] bg-white px-2.5 py-1.5 text-sm text-[#4a4a42]">
-                        {group.rows
-                          .sort((a, b) => a.client.name.localeCompare(b.client.name))
-                          .map((row) => (
-                            <li key={row.id}>{row.client.name}</li>
-                          ))}
-                      </ul>
-                    )}
-                  </div>
-                </details>
-              </li>
+
+                      <div className="flex flex-wrap items-center gap-2 border-t border-[#ede9e1] pt-2">
+                        <form action={updateWorkstreamGroup} className="flex items-center gap-1.5">
+                          <input name="firmSlug" type="hidden" value={firmSlug} />
+                          <input name="workstreamIds" type="hidden" value={group.rows.map((row) => row.id).join(",")} />
+                          <select className="input !h-8 w-28 !py-1 text-xs" defaultValue={sharedBillingType} name="billingType">
+                            <option value="">Billing...</option>
+                            <option value="hourly">hourly</option>
+                            <option value="monthly_fixed">fixed</option>
+                          </select>
+                          <select className="input !h-8 w-24 !py-1 text-xs" defaultValue={sharedStatus} name="status">
+                            <option value="">Status...</option>
+                            <option value="active">active</option>
+                            <option value="inactive">inactive</option>
+                          </select>
+                          <input
+                            className="input !h-8 w-24 !py-1 text-xs"
+                            defaultValue={sharedRate == null || sharedRate === undefined ? "" : Number(sharedRate).toString()}
+                            name="billingRate"
+                            placeholder="Rate"
+                            step="0.01"
+                            type="number"
+                          />
+                          <FormSubmitButton className="button-secondary !h-8 px-2.5 text-xs" pendingText="...">Apply all</FormSubmitButton>
+                        </form>
+
+                        {availableClients.length > 0 ? (
+                          <form action={addWorkstreamToClient} className="flex items-center gap-1.5">
+                            <input name="firmSlug" type="hidden" value={firmSlug} />
+                            <input name="templateWorkstreamId" type="hidden" value={group.rows[0].id} />
+                            <select className="input !h-8 !py-1 text-xs" name="clientId" required>
+                              <option value="">Add client...</option>
+                              {availableClients.map((client) => (
+                                <option key={`${group.name}-${client.id}`} value={client.id}>
+                                  {client.name}
+                                </option>
+                              ))}
+                            </select>
+                            <FormSubmitButton className="button-secondary !h-8 px-2.5 text-xs" pendingText="..." successText="Added">Add</FormSubmitButton>
+                          </form>
+                        ) : null}
+
+                        <form action={deleteWorkstreamGroup} className="ml-auto">
+                          <input name="firmSlug" type="hidden" value={firmSlug} />
+                          <input name="workstreamIds" type="hidden" value={group.rows.map((row) => row.id).join(",")} />
+                          <FormSubmitButton className="!h-8 px-2.5 text-xs text-red-600 transition-colors hover:text-red-800" pendingText="...">
+                            Delete all
+                          </FormSubmitButton>
+                        </form>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-0.5">
+                      {group.rows
+                        .sort((a, b) => a.client.name.localeCompare(b.client.name))
+                        .map((row) => (
+                          <p key={row.id} className="px-2 py-0.5 text-sm text-[#4a4a42]">{row.client.name}</p>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </details>
             );
           })}
-        </ul>
+        </div>
       </section>
 
       {isAdmin && openCreate ? (
