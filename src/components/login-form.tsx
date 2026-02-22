@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { getBrowserSupabaseClient } from "@/lib/supabase-browser";
 import { GoogleIcon } from "@/components/google-icon";
 
@@ -11,38 +11,13 @@ function normalizeNextPath(nextPath: string) {
   return nextPath;
 }
 
-export function LoginForm({ nextPath, oauthCode }: { nextPath: string; oauthCode: string }) {
+export function LoginForm({ nextPath }: { nextPath: string }) {
   const safeNextPath = normalizeNextPath(nextPath);
   const supabase = useMemo(() => getBrowserSupabaseClient(), []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [oauthHandled, setOauthHandled] = useState(false);
-  const oauthInProgress = Boolean(oauthCode) && !error;
-
-  useEffect(() => {
-    async function completeOAuth() {
-      if (!oauthCode || !supabase || oauthHandled) {
-        return;
-      }
-
-      setOauthHandled(true);
-      setLoading(true);
-      setError("");
-      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(oauthCode);
-      setLoading(false);
-
-      if (exchangeError) {
-        setError(exchangeError.message || "Unable to complete Google sign in");
-        return;
-      }
-
-      window.location.replace(safeNextPath);
-    }
-
-    void completeOAuth();
-  }, [oauthCode, oauthHandled, safeNextPath, supabase]);
 
   async function onPasswordSignIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -76,7 +51,7 @@ export function LoginForm({ nextPath, oauthCode }: { nextPath: string; oauthCode
     setLoading(true);
 
     const callbackNext = encodeURIComponent(safeNextPath);
-    const redirectTo = `${window.location.origin}/auth/complete?next=${callbackNext}`;
+    const redirectTo = `${window.location.origin}/auth/callback?next=${callbackNext}`;
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -102,54 +77,46 @@ export function LoginForm({ nextPath, oauthCode }: { nextPath: string; oauthCode
         <p className="text-sm text-[#7a7a70]">Sign in with Google or email and password.</p>
       </div>
 
-      {oauthInProgress ? (
-        <p className="rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] px-3 py-2 text-sm text-[#1c3a28]">
-          Completing Google sign-in...
-        </p>
-      ) : (
-        <>
-          <button className="button-secondary h-11 w-full text-base" disabled={loading} onClick={onGoogleSignIn} type="button">
-            <span className="inline-flex items-center gap-2.5">
-              <GoogleIcon />
-              Continue with Google
-            </span>
-          </button>
+      <button className="button-secondary h-11 w-full text-base" disabled={loading} onClick={onGoogleSignIn} type="button">
+        <span className="inline-flex items-center gap-2.5">
+          <GoogleIcon />
+          Continue with Google
+        </span>
+      </button>
 
-          <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-[#ddd9d0]" />
-            <span className="text-xs uppercase tracking-[0.12em] text-[#7a7a70]">or</span>
-            <div className="h-px flex-1 bg-[#ddd9d0]" />
-          </div>
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-[#ddd9d0]" />
+        <span className="text-xs uppercase tracking-[0.12em] text-[#7a7a70]">or</span>
+        <div className="h-px flex-1 bg-[#ddd9d0]" />
+      </div>
 
-          <form className="space-y-3" onSubmit={onPasswordSignIn}>
-            <label className="block space-y-1">
-              <span className="text-sm font-medium text-[#1c3a28]">Email</span>
-              <input
-                autoComplete="email"
-                className="input h-11"
-                onChange={(event) => setEmail(event.target.value)}
-                required
-                type="email"
-                value={email}
-              />
-            </label>
-            <label className="block space-y-1">
-              <span className="text-sm font-medium text-[#1c3a28]">Password</span>
-              <input
-                autoComplete="current-password"
-                className="input h-11"
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                type="password"
-                value={password}
-              />
-            </label>
-            <button className="button h-11 w-full text-base" disabled={loading} type="submit">
-              {loading ? "Signing in..." : "Sign in"}
-            </button>
-          </form>
-        </>
-      )}
+      <form className="space-y-3" onSubmit={onPasswordSignIn}>
+        <label className="block space-y-1">
+          <span className="text-sm font-medium text-[#1c3a28]">Email</span>
+          <input
+            autoComplete="email"
+            className="input h-11"
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            type="email"
+            value={email}
+          />
+        </label>
+        <label className="block space-y-1">
+          <span className="text-sm font-medium text-[#1c3a28]">Password</span>
+          <input
+            autoComplete="current-password"
+            className="input h-11"
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            type="password"
+            value={password}
+          />
+        </label>
+        <button className="button h-11 w-full text-base" disabled={loading} type="submit">
+          {loading ? "Signing in..." : "Sign in"}
+        </button>
+      </form>
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
     </div>

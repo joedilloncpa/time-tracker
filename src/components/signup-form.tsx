@@ -97,7 +97,7 @@ export function SignupForm({ returning }: { returning: boolean }) {
     // Store firm name so we can retrieve it after the OAuth redirect
     sessionStorage.setItem(FIRM_NAME_KEY, firmName.trim());
 
-    const redirectTo = `${window.location.origin}/auth/complete?next=${encodeURIComponent("/signup?returning=1")}`;
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent("/signup?returning=1")}`;
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo }
