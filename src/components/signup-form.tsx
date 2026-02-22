@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getBrowserSupabaseClient } from "@/lib/supabase-browser";
+import { GoogleIcon } from "@/components/google-icon";
 
 type SignupMode = "choose" | "firm" | "join";
 
@@ -329,7 +330,10 @@ export function SignupForm({ returning }: { returning: boolean }) {
         onClick={onGoogleSignup}
         type="button"
       >
-        Continue with Google
+        <span className="inline-flex items-center gap-2.5">
+          <GoogleIcon />
+          Continue with Google
+        </span>
       </button>
 
       <div className="flex items-center gap-3">

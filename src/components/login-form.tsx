@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { getBrowserSupabaseClient } from "@/lib/supabase-browser";
+import { GoogleIcon } from "@/components/google-icon";
 
 function normalizeNextPath(nextPath: string) {
   if (!nextPath.startsWith("/") || nextPath.startsWith("//")) {
@@ -108,7 +109,10 @@ export function LoginForm({ nextPath, oauthCode }: { nextPath: string; oauthCode
       ) : (
         <>
           <button className="button-secondary h-11 w-full text-base" disabled={loading} onClick={onGoogleSignIn} type="button">
-            Continue with Google
+            <span className="inline-flex items-center gap-2.5">
+              <GoogleIcon />
+              Continue with Google
+            </span>
           </button>
 
           <div className="flex items-center gap-3">
