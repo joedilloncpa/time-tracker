@@ -47,7 +47,7 @@ export function LandingPage() {
             <p className="mb-5 text-sm font-semibold uppercase tracking-[0.12em] text-[#7a7a70]">
               Simple time tracking for professional teams
             </p>
-            <h1 className={`${dmSerif.className} mb-6 text-4xl leading-[1.1] tracking-[-0.02em] text-[#1c3a28] sm:text-5xl md:text-6xl`}>
+            <h1 className="mb-6 text-4xl font-bold leading-[1.1] tracking-[-0.02em] text-[#1c3a28] sm:text-5xl md:text-6xl">
               Time tracking your team will actually use
             </h1>
             <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed text-[#4a4a42]">
