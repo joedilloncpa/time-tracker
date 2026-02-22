@@ -359,7 +359,7 @@ export default async function DashboardPage({
   if (!showNonBillable) exportParams.set("nonBillable", "0");
 
   return (
-    <main className="space-y-4 px-3">
+    <main className="mx-auto max-w-6xl space-y-4 px-3">
       <section className="cb-panel p-0">
         <form className="cb-filterbar flex flex-wrap items-center gap-3 p-3" method="GET">
           <ExcelFilterField
