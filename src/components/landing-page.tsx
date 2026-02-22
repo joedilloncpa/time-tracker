@@ -41,10 +41,7 @@ export function LandingPage() {
             <p className="mb-5 text-sm font-semibold uppercase tracking-[0.12em] text-[#7a7a70]">
               Simple time tracking for professional teams
             </p>
-            <h1
-              className="mb-6 text-4xl leading-[1.1] tracking-[-0.02em] text-[#1c3a28] sm:text-5xl md:text-6xl"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
+            <h1 className="cb-display mb-6 text-4xl leading-[1.1] text-[#1c3a28] sm:text-5xl md:text-6xl">
               Time tracking your team will actually use
             </h1>
             <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed text-[#4a4a42]">
@@ -71,10 +68,7 @@ export function LandingPage() {
         {/* ── Problem / Solution Cards ── */}
         <section className="bg-white px-6 py-24">
           <div className="mx-auto max-w-5xl">
-            <h2
-              className="mb-4 text-center text-3xl tracking-[-0.02em] text-[#1c3a28] md:text-4xl"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
+            <h2 className="cb-display mb-4 text-center text-3xl text-[#1c3a28] md:text-4xl">
               Time tracking shouldn&rsquo;t be this hard
             </h2>
             <p className="mx-auto mb-16 max-w-2xl text-center text-base leading-relaxed text-[#4a4a42]">
@@ -166,10 +160,7 @@ export function LandingPage() {
         {/* ── Who It's For ── */}
         <section className="bg-[#1c3a28] px-6 py-24">
           <div className="mx-auto max-w-5xl">
-            <h2
-              className="mb-4 text-center text-3xl tracking-[-0.02em] text-white md:text-4xl"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
+            <h2 className="cb-display mb-4 text-center text-3xl text-white md:text-4xl">
               Built for teams who value their time
             </h2>
             <p className="mx-auto mb-16 max-w-2xl text-center text-base leading-relaxed text-[#ede9e1]/80">
@@ -222,10 +213,7 @@ export function LandingPage() {
         <section id="features" className="bg-[#f7f4ef] px-6 py-24">
           <div className="mx-auto max-w-5xl">
             <div className="mb-6 text-center">
-              <h2
-                className="text-3xl leading-snug tracking-[-0.02em] text-[#1c3a28] sm:text-4xl md:text-5xl"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
+              <h2 className="cb-display text-3xl leading-snug text-[#1c3a28] sm:text-4xl md:text-5xl">
                 Track your time.
                 <br />
                 Know your margins.
@@ -310,10 +298,7 @@ export function LandingPage() {
         {/* ── Final CTA ── */}
         <section className="bg-[#1c3a28] px-6 py-24">
           <div className="mx-auto max-w-2xl text-center">
-            <h2
-              className="mb-6 text-3xl tracking-[-0.02em] text-white md:text-4xl"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
+            <h2 className="cb-display mb-6 text-3xl text-white md:text-4xl">
               Start tracking time the simple way
             </h2>
             <p className="mx-auto mb-10 max-w-lg text-base leading-relaxed text-[#ede9e1]/80">
