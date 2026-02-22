@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getUserContext, isAuthError } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { LandingPage } from "@/components/landing-page";
 
 export default async function HomePage() {
   if (process.env.AUTH_MODE === "dev") {
@@ -33,11 +34,10 @@ export default async function HomePage() {
       redirect(`/${user.tenantSlug}/dashboard`);
     }
   } catch (error) {
-    if (isAuthError(error, ["unauthorized", "not_provisioned"])) {
-      redirect("/login");
+    if (!isAuthError(error, ["unauthorized", "not_provisioned"])) {
+      throw error;
     }
-    throw error;
   }
 
-  redirect("/login");
+  return <LandingPage />;
 }
