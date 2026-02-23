@@ -144,7 +144,7 @@ export function SignupForm({ returning }: { returning: boolean }) {
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=/${data.tenantSlug}/dashboard`
+          emailRedirectTo: `${window.location.origin}/auth/confirm?next=/${data.tenantSlug}/dashboard`
         }
       });
 
