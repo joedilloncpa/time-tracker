@@ -14,6 +14,7 @@ type WorkstreamsParams = {
   add?: string;
   includeArchived?: string;
   clientIds?: string;
+  error?: string;
 };
 
 function toUiStatus(status: WorkstreamStatus) {
@@ -74,6 +75,7 @@ async function createWorkstreams(formData: FormData) {
   const billingType = fromUiBillingType(String(formData.get("billingType") || "hourly")) ?? "hourly";
   const status = fromUiStatus(String(formData.get("status") || "active")) ?? "active";
   const applyToAllClients = formData.get("allClients") === "1";
+  const forFirm = formData.get("forFirm") === "1";
   const selectedClientIds = String(formData.get("clientIds") || "")
     .split(",")
     .map((value) => value.trim())
@@ -83,20 +85,46 @@ async function createWorkstreams(formData: FormData) {
     throw new Error("Workstream name is required");
   }
 
-  let clientIds = selectedClientIds;
+  const clientIds: string[] = [];
+
+  if (forFirm) {
+    const firmClient = await prisma.client.findFirst({
+      where: { tenantId, code: INTERNAL_FIRM_CLIENT_CODE },
+      select: { id: true }
+    });
+    if (firmClient) clientIds.push(firmClient.id);
+  }
+
   if (applyToAllClients) {
-    const clients = await prisma.client.findMany({
+    const allClients = await prisma.client.findMany({
       where: {
         tenantId,
         OR: [{ code: null }, { code: { not: INTERNAL_FIRM_CLIENT_CODE } }]
       },
       select: { id: true }
     });
-    clientIds = clients.map((client) => client.id);
+    if (allClients.length === 0 && !forFirm) {
+      redirect(
+        `/${firmSlug}/workstreams?add=1&error=${encodeURIComponent(
+          'No clients found. Create a client first, or check "Firm (Internal)" to create this workstream for internal use only.'
+        )}`
+      );
+    }
+    for (const c of allClients) {
+      if (!clientIds.includes(c.id)) clientIds.push(c.id);
+    }
+  } else {
+    for (const id of selectedClientIds) {
+      if (!clientIds.includes(id)) clientIds.push(id);
+    }
   }
 
   if (clientIds.length === 0) {
-    throw new Error("Select at least one client or enable all clients");
+    redirect(
+      `/${firmSlug}/workstreams?add=1&error=${encodeURIComponent(
+        'Select at least one client, check "Apply to all clients", or check "Firm (Internal)" for internal use.'
+      )}`
+    );
   }
 
   const billingRate = parseDecimal(formData.get("billingRate"));
@@ -271,6 +299,7 @@ export default async function WorkstreamsPage({
   const { user, tenantId } = await resolveTenantContext(firmSlug);
   const isAdmin = user.role === "firm_admin" || user.role === "super_admin";
   const openCreate = query.add === "1";
+  const createError = query.error ?? null;
   const includeArchived = query.includeArchived === "1";
   const selectedClientIds = (query.clientIds ?? "")
     .split(",")
@@ -540,21 +569,35 @@ export default async function WorkstreamsPage({
             </div>
             <form action={createWorkstreams} className="grid gap-3 p-6 md:grid-cols-2">
               <input name="firmSlug" type="hidden" value={firmSlug} />
+              {createError ? (
+                <p className="md:col-span-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                  {createError}
+                </p>
+              ) : null}
               <label className="text-sm text-[#4a4a42]">Name</label>
               <input className="input md:col-span-2" name="name" placeholder="Workstream name" required />
-              <label className="text-sm text-[#4a4a42]">Applies to Clients</label>
-              <div className="md:col-span-2">
+              <label className="text-sm text-[#4a4a42]">Applies to</label>
+              <div className="space-y-2 md:col-span-2">
                 <ExcelFilterField
                   autoSubmit={false}
                   name="clientIds"
                   options={clients.map((client) => ({ value: client.id, label: client.name }))}
-                  placeholder="Select clients"
+                  placeholder="Select specific clients"
                   selected={[]}
                 />
-                <label className="mt-2 inline-flex items-center gap-2 text-sm text-[#1a2e1f]">
+                <label className="inline-flex items-center gap-2 text-sm text-[#1a2e1f]">
                   <input name="allClients" type="checkbox" value="1" />
                   Apply to all clients
                 </label>
+                <div className="border-t border-[#ede9e1] pt-2">
+                  <label className="inline-flex items-center gap-2 text-sm text-[#1a2e1f]">
+                    <input name="forFirm" type="checkbox" value="1" />
+                    <span>
+                      Firm (Internal)
+                      <span className="ml-1 text-xs text-[#7a7a70]">— internal work not billed to a client</span>
+                    </span>
+                  </label>
+                </div>
               </div>
               <label className="text-sm text-[#4a4a42]">Billing Type</label>
               <select className="input" defaultValue="hourly" name="billingType">
