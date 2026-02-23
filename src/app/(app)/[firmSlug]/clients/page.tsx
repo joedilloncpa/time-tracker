@@ -85,7 +85,7 @@ async function updateClient(formData: FormData) {
       budgetHours: formData.get("budgetHours") ? Number(formData.get("budgetHours")) : null,
       budgetAmount: formData.get("budgetAmount") ? Number(formData.get("budgetAmount")) : null,
       qboXeroLink: String(formData.get("qboXeroLink") || "").trim() || null,
-      status: formData.get("isInactive") ? "inactive" : parseClientStatus(formData.get("status")),
+      status: parseClientStatus(formData.get("status")),
       tags: String(formData.get("tags") || "")
         .split(",")
         .map((t) => t.trim())
@@ -289,10 +289,6 @@ export default async function ClientsPage({
                     <input className="input md:col-span-2" defaultValue={client.qboXeroLink ?? ""} name="qboXeroLink" placeholder="QBO/Xero link" />
                     <input className="input md:col-span-3" defaultValue={client.tags.join(", ")} name="tags" placeholder="Tags (comma separated)" />
                     <input className="input md:col-span-3" defaultValue={client.notes ?? ""} name="notes" placeholder="Notes" />
-                    <label className="inline-flex items-center gap-2 text-sm text-[#1a2e1f]">
-                      <input defaultChecked={client.status === "inactive"} name="isInactive" type="checkbox" />
-                      Make client inactive
-                    </label>
                     <FormSubmitButton className="button md:justify-self-end" pendingText="Saving...">
                       Save
                     </FormSubmitButton>
