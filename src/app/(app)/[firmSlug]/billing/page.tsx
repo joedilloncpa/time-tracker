@@ -107,7 +107,7 @@ export default async function BillingPage({
           {!hasSubscription ? (
             <div className="rounded-lg border border-[#ddd9d0] bg-[#f7f4ef] px-4 py-3">
               <p className="text-sm text-[#4a4a42]">
-                Your free plan includes {FREE_USER_LIMIT} team members and {FREE_CLIENT_LIMIT} client.
+                Your free plan includes {FREE_USER_LIMIT} team members and {FREE_CLIENT_LIMIT} clients.
                 Need more? Set up billing to add users and clients for just <strong>$1/month each</strong>.
               </p>
             </div>

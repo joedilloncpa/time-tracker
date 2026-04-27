@@ -3,7 +3,7 @@ import { stripe } from "@/lib/stripe";
 import { INTERNAL_FIRM_CLIENT_CODE } from "@/lib/firm-work";
 
 export const FREE_USER_LIMIT = 2;
-export const FREE_CLIENT_LIMIT = 1;
+export const FREE_CLIENT_LIMIT = 3;
 
 function getExtraUsersPriceId(): string {
   const id = process.env.STRIPE_PRICE_EXTRA_USERS;
@@ -95,7 +95,7 @@ export async function checkAndHandleClientLimit(tenantId: string): Promise<Limit
     return {
       allowed: false,
       reason: "needs_billing",
-      message: `You've reached the free plan limit of ${FREE_CLIENT_LIMIT} client. Set up billing to add more clients.`
+      message: `You've reached the free plan limit of ${FREE_CLIENT_LIMIT} clients. Set up billing to add more clients.`
     };
   }
 
