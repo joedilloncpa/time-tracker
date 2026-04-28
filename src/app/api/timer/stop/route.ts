@@ -44,6 +44,8 @@ export async function POST(request: NextRequest) {
         clientId,
         workstreamId,
         date: now,
+        startTime: timer.startedAt,
+        endTime: now,
         durationMinutes,
         isBillable: client?.code === INTERNAL_FIRM_CLIENT_CODE ? false : true,
         notes: body.notes ?? timer.notes ?? null,

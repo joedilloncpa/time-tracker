@@ -228,82 +228,97 @@ export function DashboardTimerRows({
           const isEditing = timer.id === editingId && draft;
           if (isEditing) {
             return (
-              <tr key={timer.id} className="border-b border-[#d6e6dc] [&>td]:bg-[#e6f1ea]">
-                <td className="py-2 pr-3">
-                  <input
-                    className="input !h-9 !w-[170px] !py-1.5"
-                    onChange={(event) => setDraft({ ...draft, date: event.target.value })}
-                    type="date"
-                    value={draft.date}
-                  />
-                </td>
-                {isAdmin ? <td className="py-2 pr-3">{timer.userName}</td> : null}
-                <td className="py-2 pr-3">
-                  <select
-                    className="input !h-9 !w-[220px] !py-1.5"
-                    onChange={(event) => setDraft({ ...draft, workstreamId: event.target.value })}
-                    value={draft.workstreamId}
-                  >
-                    {workstreams.map((workstream) => (
-                      <option key={`${timer.id}-${workstream.id}`} value={workstream.id}>
-                        {workstream.name}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="py-2 pr-3">
-                  <input
-                    className="input !h-9 !w-[130px] !py-1.5"
-                    onChange={(event) => setDraft({ ...draft, startTime: event.target.value })}
-                    type="time"
-                    value={draft.startTime}
-                  />
-                </td>
-                <td className="py-2 pr-3">
-                  <input
-                    className="input !h-9 !w-[130px] !py-1.5"
-                    onChange={(event) => setDraft({ ...draft, endTime: event.target.value })}
-                    type="time"
-                    value={draft.endTime}
-                  />
-                </td>
-                <td className="py-2 pr-3">
-                  <input
-                    className="input !h-9 !w-[100px] !py-1.5"
-                    onChange={(event) => setDraft({ ...draft, hours: event.target.value })}
-                    step="0.01"
-                    type="number"
-                    value={draft.hours}
-                  />
-                </td>
-                <td className="py-2 pr-3">
-                  <select
-                    className="input !h-9 !w-[130px] !py-1.5"
-                    onChange={(event) => setDraft({ ...draft, isBillable: event.target.value === "client" })}
-                    value={draft.isBillable ? "client" : "firm"}
-                  >
-                    <option value="client">Client Work</option>
-                    <option value="firm">Firm Work</option>
-                  </select>
-                </td>
-                <td className="py-2">
-                  <div className="flex items-center gap-2">
-                    <input
-                      className="input !h-9 !min-w-[180px] !py-1.5"
-                      onChange={(event) => setDraft({ ...draft, notes: event.target.value })}
-                      placeholder="Notes"
-                      value={draft.notes}
-                    />
-                    <button className="button-secondary !h-9 px-3" disabled={saving} onClick={cancelEdit} type="button">
-                      Cancel
-                    </button>
-                    <button className="button !h-9 px-3" disabled={saving} onClick={saveEdit} type="button">
-                      {saving ? "Saving..." : "Save"}
-                    </button>
+              <tr key={timer.id} className="border-b border-[#d6e6dc]">
+                <td className="bg-[#e6f1ea] p-3" colSpan={isAdmin ? 9 : 8}>
+                  <div className="flex flex-wrap items-end gap-3">
+                    <label className="flex flex-col text-xs text-[#4a4a42]">
+                      Date
+                      <input
+                        className="input !mt-1 !h-9 !w-[150px] !py-1.5"
+                        onChange={(event) => setDraft({ ...draft, date: event.target.value })}
+                        type="date"
+                        value={draft.date}
+                      />
+                    </label>
+                    {isAdmin ? (
+                      <div className="flex flex-col text-xs text-[#4a4a42]">
+                        Employee
+                        <span className="mt-1 flex h-9 items-center text-sm text-[#1a2e1f]">{timer.userName}</span>
+                      </div>
+                    ) : null}
+                    <label className="flex flex-col text-xs text-[#4a4a42]">
+                      Workstream
+                      <select
+                        className="input !mt-1 !h-9 !w-[200px] !py-1.5"
+                        onChange={(event) => setDraft({ ...draft, workstreamId: event.target.value })}
+                        value={draft.workstreamId}
+                      >
+                        {workstreams.map((workstream) => (
+                          <option key={`${timer.id}-${workstream.id}`} value={workstream.id}>
+                            {workstream.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="flex flex-col text-xs text-[#4a4a42]">
+                      Start
+                      <input
+                        className="input !mt-1 !h-9 !w-[120px] !py-1.5"
+                        onChange={(event) => setDraft({ ...draft, startTime: event.target.value })}
+                        type="time"
+                        value={draft.startTime}
+                      />
+                    </label>
+                    <label className="flex flex-col text-xs text-[#4a4a42]">
+                      End
+                      <input
+                        className="input !mt-1 !h-9 !w-[120px] !py-1.5"
+                        onChange={(event) => setDraft({ ...draft, endTime: event.target.value })}
+                        type="time"
+                        value={draft.endTime}
+                      />
+                    </label>
+                    <label className="flex flex-col text-xs text-[#4a4a42]">
+                      Hours
+                      <input
+                        className="input !mt-1 !h-9 !w-[90px] !py-1.5"
+                        onChange={(event) => setDraft({ ...draft, hours: event.target.value })}
+                        step="0.01"
+                        type="number"
+                        value={draft.hours}
+                      />
+                    </label>
+                    <label className="flex flex-col text-xs text-[#4a4a42]">
+                      Type
+                      <select
+                        className="input !mt-1 !h-9 !w-[130px] !py-1.5"
+                        onChange={(event) => setDraft({ ...draft, isBillable: event.target.value === "client" })}
+                        value={draft.isBillable ? "client" : "firm"}
+                      >
+                        <option value="client">Client Work</option>
+                        <option value="firm">Firm Work</option>
+                      </select>
+                    </label>
+                    <label className="flex min-w-[200px] flex-1 flex-col text-xs text-[#4a4a42]">
+                      Notes
+                      <input
+                        className="input !mt-1 !h-9 !py-1.5"
+                        onChange={(event) => setDraft({ ...draft, notes: event.target.value })}
+                        placeholder="Notes"
+                        value={draft.notes}
+                      />
+                    </label>
+                    <div className="ml-auto flex items-center gap-2">
+                      <button className="button-secondary !h-9 px-3" disabled={saving} onClick={cancelEdit} type="button">
+                        Cancel
+                      </button>
+                      <button className="button !h-9 px-3" disabled={saving} onClick={saveEdit} type="button">
+                        {saving ? "Saving..." : "Save"}
+                      </button>
+                    </div>
                   </div>
-                  {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}
+                  {error ? <p className="mt-2 text-xs text-red-600">{error}</p> : null}
                 </td>
-                <td className="py-2"></td>
               </tr>
             );
           }
