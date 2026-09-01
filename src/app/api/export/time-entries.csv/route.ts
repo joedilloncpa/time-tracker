@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getApiContextFromSearchParams } from "@/lib/api-context";
 import { asCsv } from "@/lib/reporting";
+import { calendarDateToUtc, endOfCalendarDayUtc } from "@/lib/calendar-date";
 
 export async function GET(request: NextRequest) {
   const { user } = await getApiContextFromSearchParams(request.nextUrl.searchParams);
@@ -15,8 +16,8 @@ export async function GET(request: NextRequest) {
       ...(from || to
         ? {
             date: {
-              ...(from ? { gte: new Date(from) } : {}),
-              ...(to ? { lte: new Date(to) } : {})
+              ...(from ? { gte: calendarDateToUtc(from) } : {}),
+              ...(to ? { lte: endOfCalendarDayUtc(to) } : {})
             }
           }
         : {})

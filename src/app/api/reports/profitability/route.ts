@@ -3,6 +3,8 @@ import { getApiContextFromSearchParams } from "@/lib/api-context";
 import { canViewCostRates } from "@/lib/permissions";
 import { clientProfitability } from "@/lib/reporting";
 import { jsonError } from "@/lib/http";
+import { calendarDateToUtc, endOfCalendarDayUtc, resolveDateRange } from "@/lib/calendar-date";
+import { getTenantTimeZone } from "@/lib/tenant";
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,8 +16,10 @@ export async function GET(request: NextRequest) {
     const from = request.nextUrl.searchParams.get("from");
     const to = request.nextUrl.searchParams.get("to");
 
-    const start = from ? new Date(from) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    const end = to ? new Date(to) : new Date();
+    const timeZone = await getTenantTimeZone(user.tenantId);
+    const thisMonth = resolveDateRange("this_month", null, null, timeZone)!;
+    const start = from ? calendarDateToUtc(from) : thisMonth.from;
+    const end = to ? endOfCalendarDayUtc(to) : thisMonth.to;
 
     const rows = await clientProfitability(user.tenantId ?? "", start, end);
     return NextResponse.json({ rows });

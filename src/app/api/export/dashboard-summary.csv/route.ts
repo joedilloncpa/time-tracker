@@ -1,48 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { endOfMonth, endOfWeek, startOfMonth, startOfWeek, subMonths, subWeeks } from "date-fns";
 import { prisma } from "@/lib/db";
 import { getApiContextFromSearchParams } from "@/lib/api-context";
 import { asCsv } from "@/lib/reporting";
-
-function getDateRange(
-  period: "all" | "this_week" | "last_week" | "this_month" | "last_month" | "custom",
-  dateFrom?: string | null,
-  dateTo?: string | null
-) {
-  if (period === "all") {
-    return null;
-  }
-
-  if (period === "custom" && dateFrom && dateTo) {
-    const from = new Date(`${dateFrom}T00:00:00`);
-    const to = new Date(`${dateTo}T23:59:59`);
-    if (!Number.isNaN(from.getTime()) && !Number.isNaN(to.getTime())) {
-      return { from, to };
-    }
-  }
-
-  const now = new Date();
-  if (period === "this_week") {
-    return { from: startOfWeek(now, { weekStartsOn: 1 }), to: endOfWeek(now, { weekStartsOn: 1 }) };
-  }
-  if (period === "last_week") {
-    const base = subWeeks(now, 1);
-    return { from: startOfWeek(base, { weekStartsOn: 1 }), to: endOfWeek(base, { weekStartsOn: 1 }) };
-  }
-  if (period === "this_month") {
-    return { from: startOfMonth(now), to: endOfMonth(now) };
-  }
-  if (period === "last_month") {
-    const base = subMonths(now, 1);
-    return { from: startOfMonth(base), to: endOfMonth(base) };
-  }
-  return null;
-}
+import { resolveDateRange } from "@/lib/calendar-date";
+import { getTenantTimeZone } from "@/lib/tenant";
 
 function parseIds(raw: string | null) {
   return (raw ?? "").split(",").map((id) => id.trim()).filter(Boolean);
 }
 
+// Calendar dates are stored at UTC midnight, so UTC getters name the firm's
+// billing month - matching what assertPeriodUnlocked locks.
 function billingMonthKey(date: Date) {
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, "0");
@@ -64,10 +32,12 @@ export async function GET(request: NextRequest) {
   const includeInactive = request.nextUrl.searchParams.get("includeInactive") === "1";
   const showBillable = request.nextUrl.searchParams.get("billable") !== "0";
   const showNonBillable = request.nextUrl.searchParams.get("nonBillable") !== "0";
-  const dateRange = getDateRange(
+  const timeZone = await getTenantTimeZone(user.tenantId);
+  const dateRange = resolveDateRange(
     period,
     request.nextUrl.searchParams.get("dateFrom"),
-    request.nextUrl.searchParams.get("dateTo")
+    request.nextUrl.searchParams.get("dateTo"),
+    timeZone
   );
   const selectedClientIds = parseIds(request.nextUrl.searchParams.get("clientIds"));
   const selectedEmployeeIds = parseIds(request.nextUrl.searchParams.get("employeeIds"));

@@ -4,6 +4,8 @@ import { assertPeriodUnlocked } from "@/lib/time-validation";
 import { getApiContextFromSearchParams } from "@/lib/api-context";
 import { jsonError } from "@/lib/http";
 import { INTERNAL_FIRM_CLIENT_CODE } from "@/lib/firm-work";
+import { startOfCalendarDayUtc } from "@/lib/calendar-date";
+import { getTenantTimeZone } from "@/lib/tenant";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +18,9 @@ export async function POST(request: NextRequest) {
     }
 
     const now = new Date();
-    await assertPeriodUnlocked(user.tenantId ?? "", now);
+    const timeZone = await getTenantTimeZone(user.tenantId);
+    const entryDate = startOfCalendarDayUtc(now, timeZone);
+    await assertPeriodUnlocked(user.tenantId ?? "", entryDate);
 
     const durationMinutes = Math.max(1, Math.round((now.getTime() - timer.startedAt.getTime()) / 60000));
 
@@ -43,7 +47,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         clientId,
         workstreamId,
-        date: now,
+        date: entryDate,
         startTime: timer.startedAt,
         endTime: now,
         durationMinutes,

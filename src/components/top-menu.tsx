@@ -208,7 +208,7 @@ export function TopMenu({
         body: JSON.stringify({
           clientId: effectiveClientId,
           workstreamId: addWorkstreamId,
-          date: `${addDate}T00:00:00`,
+          date: addDate,
           startTime: startAt.toISOString(),
           endTime: endAt.toISOString(),
           durationMinutes,

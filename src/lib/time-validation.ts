@@ -31,6 +31,8 @@ export function detectWeekend(date: Date) {
   return day === 0 || day === 6;
 }
 
+// `date` is a calendar date stored at UTC midnight (see lib/calendar-date), so
+// UTC getters give the firm's period rather than the server's.
 export async function assertPeriodUnlocked(tenantId: string, date: Date) {
   const periodYear = date.getUTCFullYear();
   const periodMonth = date.getUTCMonth() + 1;

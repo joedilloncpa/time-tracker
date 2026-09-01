@@ -6,6 +6,7 @@ import { getApiContextFromSearchParams } from "@/lib/api-context";
 import { jsonError } from "@/lib/http";
 import { INTERNAL_FIRM_CLIENT_CODE } from "@/lib/firm-work";
 import { getAllowedClientIdsForUser } from "@/lib/tenant-settings";
+import { calendarDateToUtc, endOfCalendarDayUtc } from "@/lib/calendar-date";
 
 export async function GET(request: NextRequest) {
   try {
@@ -42,8 +43,8 @@ export async function GET(request: NextRequest) {
         ...(from || to
           ? {
               date: {
-                ...(from ? { gte: new Date(from) } : {}),
-                ...(to ? { lte: new Date(to) } : {})
+                ...(from ? { gte: calendarDateToUtc(from) } : {}),
+                ...(to ? { lte: endOfCalendarDayUtc(to) } : {})
               }
             }
           : {})
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
       select: { settingsJson: true }
     });
     const allowedClientIds = getAllowedClientIdsForUser(tenant?.settingsJson, user.id, user.role);
-    const date = new Date(body.date);
+    const date = calendarDateToUtc(String(body.date ?? ""));
     await assertPeriodUnlocked(user.tenantId ?? "", date);
 
     const client = await prisma.client.findFirst({
@@ -204,8 +205,10 @@ export async function PATCH(request: NextRequest) {
       patchData.notes = patch.notes.trim() || null;
     }
     if (typeof patch.date === "string" && patch.date.trim()) {
-      const parsedDate = new Date(patch.date);
-      if (Number.isNaN(parsedDate.getTime())) {
+      let parsedDate: Date;
+      try {
+        parsedDate = calendarDateToUtc(patch.date);
+      } catch {
         return jsonError("Invalid date");
       }
       patchData.date = parsedDate;

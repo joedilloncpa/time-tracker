@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { endOfMonth, endOfWeek, format, startOfMonth, startOfWeek, subMonths, subWeeks } from "date-fns";
+import { format } from "date-fns";
 import { prisma } from "@/lib/db";
 import { getUserContext } from "@/lib/auth";
+import { resolveDateRange } from "@/lib/calendar-date";
+import { getTenantTimeZone } from "@/lib/tenant";
 import { DateRangePickerField } from "@/components/date-range-picker-field";
 import { ExcelFilterField } from "@/components/excel-filter-field";
 import { PeriodFilterField } from "@/components/period-filter-field";
@@ -19,57 +21,6 @@ type DashboardParams = {
   nonBillable?: string;
 };
 
-function getDateRange(
-  period: "all" | "this_week" | "last_week" | "this_month" | "last_month" | "custom",
-  dateFrom?: string,
-  dateTo?: string
-) {
-  if (period === "all") {
-    return null;
-  }
-
-  if (period === "custom" && dateFrom && dateTo) {
-    const from = new Date(`${dateFrom}T00:00:00`);
-    const to = new Date(`${dateTo}T23:59:59`);
-    if (!Number.isNaN(from.getTime()) && !Number.isNaN(to.getTime())) {
-      return { from, to };
-    }
-  }
-
-  const now = new Date();
-  if (period === "this_week") {
-    return {
-      from: startOfWeek(now, { weekStartsOn: 1 }),
-      to: endOfWeek(now, { weekStartsOn: 1 })
-    };
-  }
-
-  if (period === "last_week") {
-    const base = subWeeks(now, 1);
-    return {
-      from: startOfWeek(base, { weekStartsOn: 1 }),
-      to: endOfWeek(base, { weekStartsOn: 1 })
-    };
-  }
-
-  if (period === "this_month") {
-    return {
-      from: startOfMonth(now),
-      to: endOfMonth(now)
-    };
-  }
-
-  if (period === "last_month") {
-    const base = subMonths(now, 1);
-    return {
-      from: startOfMonth(base),
-      to: endOfMonth(base)
-    };
-  }
-
-  return null;
-}
-
 function usd(value: number, maximumFractionDigits = 0) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -86,6 +37,8 @@ function normalizePersonName(value: string) {
   return value.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
+// Calendar dates are stored at UTC midnight, so UTC getters name the firm's
+// billing month - matching what assertPeriodUnlocked locks.
 function billingMonthKey(date: Date) {
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, "0");
@@ -116,7 +69,8 @@ export default async function DashboardPage({
   const includeInactive = query.includeInactive === "1";
   const showBillable = query.billable !== "0";
   const showNonBillable = query.nonBillable !== "0";
-  const dateRange = getDateRange(period, query.dateFrom, query.dateTo);
+  const timeZone = await getTenantTimeZone(user.tenantId);
+  const dateRange = resolveDateRange(period, query.dateFrom, query.dateTo, timeZone);
   const selectedClientIds = (query.clientIds ?? "").split(",").map((id) => id.trim()).filter(Boolean);
   const selectedEmployeeIds = isAdmin
     ? (query.employeeIds ?? "").split(",").map((id) => id.trim()).filter(Boolean)

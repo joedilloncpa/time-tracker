@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { utcToCalendarDate } from "@/lib/calendar-date";
 
 type TimerRow = {
   id: string;
@@ -32,11 +33,10 @@ type DraftRow = {
   notes: string;
 };
 
+// `date` is a calendar date stored at UTC midnight, so it reads in UTC. The
+// start/end helpers below deal in real instants and stay local on purpose.
 function formatDateText(iso: string) {
-  const d = new Date(iso);
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const yyyy = d.getFullYear();
+  const [yyyy, mm, dd] = toDateInput(iso).split("-");
   return `${mm}/${dd}/${yyyy}`;
 }
 
@@ -48,11 +48,7 @@ function formatTimeText(iso: string | null) {
 }
 
 function toDateInput(iso: string) {
-  const d = new Date(iso);
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  return utcToCalendarDate(new Date(iso));
 }
 
 function toTimeInput(iso: string | null) {
@@ -130,7 +126,7 @@ export function DashboardTimerRows({
         body: JSON.stringify({
           entryIds: [editingId],
           patch: {
-            date: new Date(`${draft.date}T00:00:00`).toISOString(),
+            date: draft.date,
             workstreamId: draft.workstreamId,
             startTime: toIsoOrNull(draft.date, draft.startTime),
             endTime: toIsoOrNull(draft.date, draft.endTime),

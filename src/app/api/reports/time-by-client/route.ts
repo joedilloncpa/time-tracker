@@ -3,6 +3,8 @@ import { getApiContextFromSearchParams } from "@/lib/api-context";
 import { timeByClient } from "@/lib/reporting";
 import { prisma } from "@/lib/db";
 import { jsonError } from "@/lib/http";
+import { calendarDateToUtc, endOfCalendarDayUtc, resolveDateRange } from "@/lib/calendar-date";
+import { getTenantTimeZone } from "@/lib/tenant";
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,8 +12,10 @@ export async function GET(request: NextRequest) {
     const from = request.nextUrl.searchParams.get("from");
     const to = request.nextUrl.searchParams.get("to");
 
-    const start = from ? new Date(from) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    const end = to ? new Date(to) : new Date();
+    const timeZone = await getTenantTimeZone(user.tenantId);
+    const thisMonth = resolveDateRange("this_month", null, null, timeZone)!;
+    const start = from ? calendarDateToUtc(from) : thisMonth.from;
+    const end = to ? endOfCalendarDayUtc(to) : thisMonth.to;
 
     const rows = await timeByClient(user.tenantId ?? "", start, end);
     const clients = await prisma.client.findMany({
