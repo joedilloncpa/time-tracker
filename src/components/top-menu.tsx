@@ -92,6 +92,7 @@ export function TopMenu({
     return Math.max(0, Math.floor((Date.now() - new Date(activeTimer.startedAt).getTime()) / 1000));
   });
   const [stopSaving, setStopSaving] = useState(false);
+  const [stopError, setStopError] = useState("");
 
   useEffect(() => {
     if (!activeTimer) {
@@ -106,6 +107,23 @@ export function TopMenu({
     const timer = window.setInterval(updateElapsed, 1000);
     return () => window.clearInterval(timer);
   }, [activeTimer?.id, activeTimer?.startedAt]);
+
+  // The header's timer comes from a server render and then ticks purely in the
+  // browser, so a tab left open keeps showing a timer that was stopped
+  // elsewhere. Re-check with the server when the tab comes back into view.
+  const hasActiveTimer = Boolean(activeTimer);
+  useEffect(() => {
+    if (!hasActiveTimer) {
+      return;
+    }
+    const revalidate = () => {
+      if (document.visibilityState === "visible") {
+        router.refresh();
+      }
+    };
+    document.addEventListener("visibilitychange", revalidate);
+    return () => document.removeEventListener("visibilitychange", revalidate);
+  }, [hasActiveTimer, router]);
 
   const firmClient = useMemo(
     () => timerClients.find((client) => client.code === INTERNAL_FIRM_CLIENT_CODE || client.name === "Firm"),
@@ -251,12 +269,22 @@ export function TopMenu({
       return;
     }
     setStopSaving(true);
+    setStopError("");
     try {
       const response = await fetch(`/api/timer/stop?firmSlug=${firmSlug}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({})
       });
+
+      // A 404 means the server has no timer session, so this tab is showing a
+      // stale one - it was already stopped elsewhere. Refreshing clears it;
+      // leaving it up would strand the user on a timer that can never stop.
+      if (response.status === 404) {
+        setStopError("This timer was already stopped. Refreshing...");
+        router.refresh();
+        return;
+      }
 
       if (!response.ok) {
         const payload = (await response.json()) as { error?: string };
@@ -265,7 +293,7 @@ export function TopMenu({
 
       router.refresh();
     } catch (submitError) {
-      setStartError(submitError instanceof Error ? submitError.message : "Failed to stop timer");
+      setStopError(submitError instanceof Error ? submitError.message : "Failed to stop timer");
     } finally {
       setStopSaving(false);
     }
@@ -318,6 +346,9 @@ export function TopMenu({
                 <span className="tabular-nums tracking-wide">{stopSaving ? "Stopping..." : formatElapsed(elapsedSeconds)}</span>
                 <IconStop />
               </button>
+            ) : null}
+            {stopError ? (
+              <p className="max-w-[260px] text-sm text-red-600" role="alert">{stopError}</p>
             ) : null}
             <button className="button-secondary h-11 gap-2 px-5 text-base" onClick={() => setOpenAdd(true)} type="button">
               + Add Timer
