@@ -109,21 +109,45 @@ export function TopMenu({
   }, [activeTimer?.id, activeTimer?.startedAt]);
 
   // The header's timer comes from a server render and then ticks purely in the
-  // browser, so a tab left open keeps showing a timer that was stopped
-  // elsewhere. Re-check with the server when the tab comes back into view.
-  const hasActiveTimer = Boolean(activeTimer);
+  // browser, so a tab left open can show a timer that was stopped elsewhere -
+  // and its stop button 404s forever. Reconcile against the server periodically
+  // and whenever the tab comes back into view, so a phantom timer clears itself
+  // instead of stranding the user.
+  const activeTimerId = activeTimer?.id ?? null;
   useEffect(() => {
-    if (!hasActiveTimer) {
+    if (!activeTimerId) {
       return;
     }
-    const revalidate = () => {
-      if (document.visibilityState === "visible") {
-        router.refresh();
+
+    let cancelled = false;
+
+    const reconcile = async () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+      try {
+        const response = await fetch(`/api/timer/status?firmSlug=${firmSlug}`);
+        if (!response.ok || cancelled) {
+          return;
+        }
+        const payload = (await response.json()) as { activeTimerId?: string | null };
+        if (!cancelled && payload.activeTimerId !== activeTimerId) {
+          router.refresh();
+        }
+      } catch {
+        // Offline or a transient blip - leave the timer alone and retry later.
       }
     };
-    document.addEventListener("visibilitychange", revalidate);
-    return () => document.removeEventListener("visibilitychange", revalidate);
-  }, [hasActiveTimer, router]);
+
+    reconcile();
+    const poll = window.setInterval(reconcile, 60000);
+    document.addEventListener("visibilitychange", reconcile);
+    return () => {
+      cancelled = true;
+      window.clearInterval(poll);
+      document.removeEventListener("visibilitychange", reconcile);
+    };
+  }, [activeTimerId, firmSlug, router]);
 
   const firmClient = useMemo(
     () => timerClients.find((client) => client.code === INTERNAL_FIRM_CLIENT_CODE || client.name === "Firm"),
